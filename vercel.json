@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "node build.mjs",
   "outputDirectory": "public",
-  "installCommand": "echo 'зависимостей нет'",
+  "installCommand": "echo no-dependencies",
   "headers": [
     {
       "source": "/(.*)",
