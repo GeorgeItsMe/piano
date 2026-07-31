@@ -1,0 +1,14 @@
+{
+  "name": "nota-klavisha",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Нота ↔ Клавиша — тренажёр нотного стана",
+  "scripts": {
+    "build": "node build.mjs",
+    "check": "node tools/check-course.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

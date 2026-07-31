@@ -1,0 +1,7 @@
+# Собирается из src/ командой node build.mjs
+public/
+dist/
+
+node_modules/
+.vercel/
+.shots/

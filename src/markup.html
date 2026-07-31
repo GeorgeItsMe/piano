@@ -1,0 +1,270 @@
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand__mark" id="brandMark" aria-hidden="true"></span>
+      <span class="brand__text">
+        <span class="brand__title">Нота&#8202;↔&#8202;Клавиша</span>
+        <span class="brand__sub">тренажёр нотного стана</span>
+      </span>
+    </div>
+
+    <nav class="screens" id="screens" role="tablist" aria-label="Раздел">
+      <button class="screen-tab" role="tab" data-screen="course" aria-selected="true">Курс</button>
+      <button class="screen-tab" role="tab" data-screen="practice" aria-selected="false">Тренажёр</button>
+    </nav>
+
+    <div class="tools">
+      <button class="tool" id="btnSound" aria-pressed="true" title="Звук (S)">Звук</button>
+      <button class="tool" id="btnHelp">Справка</button>
+      <button class="tool" id="btnSettings">Настройки</button>
+    </div>
+  </header>
+
+  <section class="course" id="courseScreen">
+    <header class="course__top">
+      <div class="badge"><b id="cXp">0</b><span>опыта</span></div>
+      <div class="badge"><b id="cDays">0</b><span>дней подряд</span></div>
+      <div class="badge badge--goal">
+        <svg class="ring" viewBox="0 0 40 40" aria-hidden="true">
+          <circle class="ring__bed" cx="20" cy="20" r="16"></circle>
+          <circle class="ring__arc" cx="20" cy="20" r="16" id="cRing"></circle>
+        </svg>
+        <span><b id="cGoal">0</b> из <span id="cGoalMax">40</span> сегодня</span>
+      </div>
+      <button class="chip chip--wide" id="cReview">Разминка на трудных нотах</button>
+    </header>
+    <div class="path" id="path"></div>
+  </section>
+
+  <nav class="modes" id="modes" role="tablist" aria-label="Режим занятия">
+    <button class="mode" role="tab" data-mode="free" aria-selected="true">Свободно</button>
+    <button class="mode" role="tab" data-mode="noteToKey" aria-selected="false">Нота → клавиша</button>
+    <button class="mode" role="tab" data-mode="keyToNote" aria-selected="false">Клавиша → нота</button>
+    <button class="mode" role="tab" data-mode="nameNote" aria-selected="false">Название</button>
+  </nav>
+
+  <div class="lessonbar" id="lessonBar" hidden>
+    <button class="lessonbar__back" id="lessonQuit" aria-label="Выйти из урока">←</button>
+    <div class="lessonbar__meta">
+      <span class="lessonbar__title" id="lessonTitle"></span>
+      <div class="bar"><i id="lessonProgress"></i></div>
+    </div>
+    <div class="hearts" id="hearts" aria-label="Жизни"></div>
+  </div>
+
+  <main class="stage" id="stage">
+    <section class="score">
+      <svg class="staff" id="staff" role="img" aria-label="Нотный стан"></svg>
+      <p class="cue" id="cue"></p>
+      <div class="answer" id="answer"></div>
+    </section>
+
+    <aside class="rail">
+      <div class="card readout">
+        <p class="card__title">Нота</p>
+        <div class="readout__name" id="roName">—</div>
+        <div class="readout__oct" id="roOct">нажми любую клавишу</div>
+        <div class="readout__meta">
+          <span id="roSci"></span>
+          <span id="roHz"></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="card__title">Тренировка</p>
+        <div class="stats">
+          <div class="stat"><b id="stStreak">0</b><span>серия</span></div>
+          <div class="stat"><b id="stBest">0</b><span>рекорд</span></div>
+          <div class="stat"><b id="stAcc">—</b><span>точность</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="card__title">Трудные ноты</p>
+        <div class="weak" id="weak"><p class="weak__empty">Пока пусто — позанимайся немного.</p></div>
+      </div>
+    </aside>
+
+    <section class="board" id="board">
+      <div class="board__bar">
+        <div class="seg seg--dark" data-setting="range">
+          <button data-value="2">2 октавы</button>
+          <button data-value="4">4 октавы</button>
+          <button data-value="88">Все 88</button>
+        </div>
+        <span class="board__hint" id="boardHint"></span>
+      </div>
+      <div class="board__scroll" id="boardScroll">
+        <div class="board__felt"></div>
+        <div class="keys" id="keys"></div>
+      </div>
+    </section>
+
+    <svg class="link" id="link" aria-hidden="true"></svg>
+  </main>
+
+  <div class="result" id="result" role="dialog" aria-modal="true" hidden>
+    <div class="result__card">
+      <div class="result__stars" id="resStars"></div>
+      <h2 class="result__title" id="resTitle"></h2>
+      <p class="result__text" id="resText"></p>
+      <dl class="result__rows" id="resRows"></dl>
+      <div class="result__actions">
+        <button class="chip chip--wide" id="resAgain">Ещё раз</button>
+        <button class="chip chip--wide chip--go" id="resNext">Дальше</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="sheetSettings" role="dialog" aria-modal="true" aria-label="Настройки">
+  <div class="sheet__scrim" data-close></div>
+  <div class="sheet__panel">
+    <div class="sheet__head">
+      <h2>Настройки</h2>
+      <button class="sheet__close" data-close aria-label="Закрыть">✕</button>
+    </div>
+
+    <div class="field">
+      <span class="field__label">Названия нот</span>
+      <div class="seg" data-setting="naming">
+        <button data-value="ru">До Ре Ми</button>
+        <button data-value="lat">C D E</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="field__label">Чёрные клавиши записывать как</span>
+      <div class="seg" data-setting="accidental">
+        <button data-value="sharp">Диезы ♯︎</button>
+        <button data-value="flat">Бемоли ♭︎</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="field__label">Подписи на клавишах</span>
+      <div class="seg" data-setting="labels">
+        <button data-value="all">Все</button>
+        <button data-value="c">Только До</button>
+        <button data-value="none">Нет</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="field__label">Диапазон клавиатуры</span>
+      <div class="seg" data-setting="range">
+        <button data-value="2">2 октавы</button>
+        <button data-value="4">4 октавы</button>
+        <button data-value="88">88 клавиш</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="field__label">Вид нотного стана</span>
+      <div class="seg" data-setting="staffMode">
+        <button data-value="ladder">Единая лестница</button>
+        <button data-value="standard">Как в нотах</button>
+      </div>
+      <p class="hint">«Лестница» соединяет скрипичный и басовый ключи в одну непрерывную линейку — до первой октавы стоит ровно посередине.</p>
+    </div>
+
+    <div class="field">
+      <span class="field__label">Ключи в тренировке</span>
+      <div class="seg" data-setting="scope">
+        <button data-value="treble">Скрипичный</button>
+        <button data-value="bass">Басовый</button>
+        <button data-value="both">Оба</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="field__label">Клавиши в тренировке</span>
+      <div class="seg" data-setting="blacks">
+        <button data-value="white">Только белые</button>
+        <button data-value="all">Все</button>
+      </div>
+    </div>
+
+    <label class="switch">
+      <span class="field__label">Подсказка после двух ошибок</span>
+      <input type="checkbox" id="setHints">
+    </label>
+
+    <label class="switch">
+      <span class="field__label">Звук</span>
+      <input type="checkbox" id="setSound">
+    </label>
+
+    <div class="field">
+      <span class="field__label">Громкость</span>
+      <input class="range" type="range" id="setVolume" min="0" max="100" step="1">
+    </div>
+
+    <div class="field">
+      <span class="field__label">Тема</span>
+      <div class="seg" data-setting="theme">
+        <button data-value="auto">Авто</button>
+        <button data-value="light">Светлая</button>
+        <button data-value="dark">Тёмная</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="field__label">MIDI-клавиатура</span>
+      <button class="chip chip--wide" id="btnMidi">Подключить</button>
+      <p class="hint" id="midiStatus">Если у тебя есть MIDI-клавиатура, играй прямо на ней.</p>
+    </div>
+
+    <button class="danger" id="btnReset">Сбросить статистику</button>
+  </div>
+</div>
+
+<div class="sheet" id="sheetHelp" role="dialog" aria-modal="true" aria-label="Справка">
+  <div class="sheet__scrim" data-close></div>
+  <div class="sheet__panel">
+    <div class="sheet__head">
+      <h2>Как читать стан</h2>
+      <button class="sheet__close" data-close aria-label="Закрыть">✕</button>
+    </div>
+    <div class="prose">
+      <h3>Курс и тренажёр</h3>
+      <p>В <b>курсе</b> уроки идут лестницей: следующий открывается, когда пройден предыдущий. В уроке три жизни, а промахнувшаяся нота возвращается в конец очереди — пока не возьмёшь её верно. Клавиатура на время урока сужается до нужного участка.</p>
+      <p><b>Тренажёр</b> — те же задания, но без ограничений: свой диапазон, свои ключи, сколько угодно попыток.</p>
+
+      <h3>Скрипичный ключ</h3>
+      <p>Он обвивает вторую линейку снизу — это <b>соль первой октавы</b>, отсюда и второе имя «ключ соль».</p>
+      <ul>
+        <li>На линейках снизу вверх: <span class="mnemo">Ми · Соль · Си · Ре · Фа</span></li>
+        <li>Между линейками: <span class="mnemo">Фа · Ля · До · Ми</span></li>
+      </ul>
+
+      <h3>Басовый ключ</h3>
+      <p>Две точки обнимают четвёртую линейку снизу — это <b>фа малой октавы</b>, «ключ фа».</p>
+      <ul>
+        <li>На линейках снизу вверх: <span class="mnemo">Соль · Си · Ре · Фа · Ля</span></li>
+        <li>Между линейками: <span class="mnemo">Ля · До · Ми · Соль</span></li>
+      </ul>
+
+      <h3>До первой октавы</h3>
+      <p>Оно не помещается ни на один стан и живёт на короткой добавочной линейке ровно между ними. Это середина клавиатуры и главный ориентир.</p>
+
+      <h3>Добавочные линейки</h3>
+      <p>Когда нота уходит выше или ниже стана, линейки просто продолжают лестницу — каждая следующая через одну ступень.</p>
+
+      <h3>Октавы по-русски</h3>
+      <ul>
+        <li>субконтроктава, контроктава, большая, малая</li>
+        <li>первая (начинается с до посередине), вторая, третья, четвёртая, пятая</li>
+      </ul>
+
+      <h3>Клавиатура компьютера</h3>
+      <p>Нижний ряд <kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> <kbd>V</kbd> <kbd>B</kbd> <kbd>N</kbd> <kbd>M</kbd> — белые клавиши, <kbd>S</kbd> <kbd>D</kbd> <kbd>G</kbd> <kbd>H</kbd> <kbd>J</kbd> — чёрные. Верхний ряд <kbd>Q</kbd>…<kbd>U</kbd> — октавой выше.</p>
+      <ul>
+        <li><kbd>←</kbd> <kbd>→</kbd> — сдвинуть октаву</li>
+        <li><kbd>Пробел</kbd> — повторить задание</li>
+        <li><kbd>Shift</kbd>+<kbd>1</kbd>…<kbd>4</kbd> — переключить режим</li>
+        <li><kbd>Esc</kbd> — закрыть панель</li>
+      </ul>
+    </div>
+  </div>
+</div>

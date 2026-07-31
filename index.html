@@ -1,0 +1,2065 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Нота ↔ Клавиша — тренажёр нотного стана</title>
+<style>*,*::before,*::after{box-sizing:border-box}body{margin:0}img,svg{display:block}button,input,select{font:inherit;color:inherit}</style>
+</head>
+<body>
+<style>
+/* ─── Токены: «лак и латунь» ─────────────────────────────────────────────── */
+:root{
+  color-scheme: light dark;
+
+  --bg:        light-dark(#E7E9EE, #0E1016);
+  --bg-deep:   light-dark(#D8DCE5, #080A0F);
+  --paper:     light-dark(#FBFAF6, #191D28);
+  --paper-2:   light-dark(#F3F1E9, #141822);
+  --edge:      light-dark(#DCD8CB, #272C3A);
+  --ink:       light-dark(#191B23, #E9E7DF);
+  --ink-soft:  light-dark(#474C5B, #B4B9C8);
+  --muted:     light-dark(#6E7383, #838A9C);
+  --line:      light-dark(#C6CAD4, #2C3140);
+
+  --brass:     light-dark(#A8761F, #E0A94E);
+  --brass-2:   light-dark(#8C6017, #F0C579);
+  --brass-soft:light-dark(rgba(168,118,31,.15), rgba(224,169,78,.17));
+  --brass-line:light-dark(rgba(168,118,31,.85), rgba(224,169,78,.85));
+
+  --ok:        light-dark(#3F8C5C, #5FBE85);
+  --ok-soft:   light-dark(rgba(63,140,92,.18), rgba(95,190,133,.20));
+  --bad:       light-dark(#BE423B, #E5675E);
+  --bad-soft:  light-dark(rgba(190,66,59,.18), rgba(229,103,94,.20));
+
+  --felt:      light-dark(#8E2436, #71202F);
+
+  /* Клавиши остаются клавишами в любой теме — только слегка приглушены в тёмной */
+  --wk-1:      light-dark(#FFFEFA, #F1EEE5);
+  --wk-2:      light-dark(#EFEBDE, #D6D2C4);
+  --wk-edge:   light-dark(#CBC6B6, #A6A194);
+  --wk-lip:    light-dark(#B2AC9A, #86816F);
+  --bk-1:      light-dark(#3C404D, #333744);
+  --bk-2:      light-dark(#101218, #06070B);
+  --key-ink:   #3A3F4D;
+
+  --shell:     light-dark(#2A2D38, #1A1D26);
+
+  /* Символьный шрифт стоит перед родовым: иначе ♯ и ♭ подхватываются из
+     цветного эмодзи-шрифта и вылезают оранжевыми */
+  --f-display: "Palatino Linotype", Palatino, "Book Antiqua", "URW Palladio L", "Iowan Old Style", Georgia,
+               "Segoe UI Symbol", "Apple Symbols", "Noto Sans Symbols 2", serif;
+  --f-ui:      "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Noto Sans", Arial,
+               "Segoe UI Symbol", "Apple Symbols", "Noto Sans Symbols 2", sans-serif;
+  --f-num:     "Cascadia Mono", ui-monospace, "SF Mono", Consolas, "DejaVu Sans Mono", monospace;
+
+  --r:         12px;
+  --shadow:    0 20px 46px -28px light-dark(rgba(22,26,44,.55), rgba(0,0,0,.85));
+}
+:root[data-theme="dark"]{ color-scheme: dark }
+:root[data-theme="light"]{ color-scheme: light }
+
+*,*::before,*::after{ box-sizing:border-box }
+
+body{
+  margin:0;
+  font-family:var(--f-ui);
+  color:var(--ink);
+  background:
+    radial-gradient(120% 80% at 50% -10%, var(--bg) 0%, var(--bg-deep) 100%) fixed;
+  -webkit-font-smoothing:antialiased;
+}
+
+.app{
+  max-width:1280px;
+  margin:0 auto;
+  padding:16px 20px 44px;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+
+/* ─── Шапка ──────────────────────────────────────────────────────────────── */
+.topbar{
+  display:flex;
+  align-items:center;
+  gap:18px;
+  flex-wrap:wrap;
+}
+.brand{ display:flex; align-items:center; gap:11px; margin-right:auto }
+.brand__mark{
+  width:36px; height:44px;
+  display:grid; place-items:center;
+  color:var(--brass);
+  flex:none;
+}
+.brand__mark svg{ width:100%; height:100% }
+.brand__text{ display:flex; flex-direction:column; line-height:1.15 }
+.brand__title{
+  font-family:var(--f-display);
+  font-size:1.32rem;
+  letter-spacing:.01em;
+}
+.brand__sub{
+  font-size:.72rem;
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  color:var(--muted);
+  font-style:normal;
+}
+
+[hidden]{ display:none !important }
+
+.screens{ display:flex; gap:4px; padding:4px; background:var(--paper-2); border:1px solid var(--edge); border-radius:11px }
+.screen-tab{
+  appearance:none; border:0; background:transparent; cursor:pointer;
+  padding:9px 20px; border-radius:8px;
+  font-size:.92rem; font-family:var(--f-display); color:var(--ink-soft);
+  transition:background .16s, color .16s;
+}
+.screen-tab:hover{ color:var(--ink) }
+.screen-tab[aria-selected="true"]{
+  background:var(--brass); color:light-dark(#FFF8E9, #1A1206);
+  box-shadow:0 1px 2px rgba(0,0,0,.18);
+}
+
+.modes{ display:flex; gap:4px; padding:4px; background:var(--paper-2); border:1px solid var(--edge); border-radius:11px; flex-wrap:wrap; align-self:flex-start }
+.mode{
+  appearance:none; border:0; background:transparent; cursor:pointer;
+  padding:8px 13px; border-radius:8px;
+  font-size:.86rem; color:var(--ink-soft);
+  transition:background .16s, color .16s;
+}
+.mode:hover{ color:var(--ink) }
+.mode[aria-selected="true"]{
+  background:var(--brass); color:light-dark(#FFF8E9, #1A1206);
+  box-shadow:0 1px 2px rgba(0,0,0,.18);
+}
+
+.tools{ display:flex; gap:6px }
+.tool{
+  appearance:none; cursor:pointer;
+  border:1px solid var(--edge); background:var(--paper-2); color:var(--ink-soft);
+  border-radius:9px; padding:8px 12px; font-size:.84rem;
+  display:flex; align-items:center; gap:6px;
+  transition:border-color .16s, color .16s, background .16s;
+}
+.tool:hover{ color:var(--ink); border-color:var(--line) }
+.tool[aria-pressed="true"]{ color:var(--brass); border-color:var(--brass) }
+
+:where(button, [tabindex]):focus-visible{
+  outline:2px solid var(--brass);
+  outline-offset:2px;
+}
+
+/* ─── Сцена ──────────────────────────────────────────────────────────────── */
+.stage{
+  position:relative;
+  display:grid;
+  gap:16px;
+  grid-template-columns:minmax(0,1fr) 274px;
+  grid-template-areas:
+    "score rail"
+    "board board";
+}
+@media (max-width:1000px){
+  .stage{ grid-template-columns:minmax(0,1fr); grid-template-areas:"score" "board" "rail" }
+}
+
+/* ─── Нотный стан ────────────────────────────────────────────────────────── */
+.score{
+  grid-area:score;
+  background:linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
+  border:1px solid var(--edge);
+  border-radius:var(--r);
+  box-shadow:var(--shadow);
+  padding:14px 16px 12px;
+  display:flex; flex-direction:column; gap:10px;
+  min-width:0;
+}
+.staff{ width:100%; height:auto; display:block; touch-action:manipulation }
+.staff .rule{ stroke:var(--ink); stroke-width:1.3; opacity:.45 }
+.staff .ledger{ stroke:var(--ink); stroke-width:1.9; stroke-linecap:round }
+.staff .glyph{ fill:var(--ink) }
+.staff .brace{ fill:var(--ink-soft); opacity:.75 }
+.staff .head{ fill:var(--ink) }
+.staff .head--ok{ fill:var(--ok) }
+.staff .head--bad{ fill:var(--bad) }
+.staff .ghost{ fill:var(--brass); opacity:.32 }
+.staff .ghost-ledger{ stroke:var(--brass); stroke-width:1.9; opacity:.4; stroke-linecap:round }
+.staff .hit{ fill:transparent }
+.staff .mid{ stroke:var(--brass); stroke-width:1.2; stroke-dasharray:2 7; opacity:.55 }
+.staff .midlabel{ fill:var(--brass); font:400 11px var(--f-ui); opacity:.8; letter-spacing:.04em }
+.staff.is-clickable{ cursor:crosshair }
+
+@keyframes note-in{ from{ opacity:0; transform:translateY(-5px) scale(.86) } to{ opacity:1; transform:none } }
+.staff .note-anim{ animation:note-in .22s cubic-bezier(.2,.9,.3,1.2) both; transform-origin:center }
+
+.cue{
+  margin:0;
+  display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;
+  min-height:26px;
+  font-size:.95rem; color:var(--ink-soft);
+}
+.cue b{ font-family:var(--f-display); font-size:1.14rem; color:var(--ink); font-weight:600 }
+.cue.is-ok b{ color:var(--ok) }
+.cue.is-bad b{ color:var(--bad) }
+
+/* Панель ответа под станом */
+.answer{ display:flex; flex-wrap:wrap; gap:7px; align-items:center; min-height:0 }
+.answer:empty{ display:none }
+.answer__label{ font-size:.78rem; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); margin-right:2px }
+.chip{
+  appearance:none; cursor:pointer;
+  border:1px solid var(--edge); background:var(--paper);
+  color:var(--ink); border-radius:9px;
+  padding:9px 14px; font-size:.95rem;
+  font-family:var(--f-display);
+  transition:transform .1s, border-color .16s, background .16s, color .16s;
+}
+.chip:hover{ border-color:var(--brass); }
+.chip:active{ transform:translateY(1px) }
+.chip[aria-pressed="true"]{ background:var(--brass); border-color:var(--brass); color:light-dark(#FFF8E9,#1A1206) }
+.chip.is-ok{ background:var(--ok-soft); border-color:var(--ok); color:var(--ok) }
+.chip.is-bad{ background:var(--bad-soft); border-color:var(--bad); color:var(--bad) }
+.chip--wide{ font-family:var(--f-ui); font-size:.86rem }
+.chip--sign{ min-width:44px; padding:9px 10px; font-size:1.05rem }
+
+/* ─── Правая колонка ─────────────────────────────────────────────────────── */
+.rail{
+  grid-area:rail;
+  display:flex; flex-direction:column; gap:12px;
+  min-width:0;
+}
+.card{
+  background:var(--paper);
+  border:1px solid var(--edge);
+  border-radius:var(--r);
+  padding:14px;
+}
+.card__title{
+  font-size:.71rem; text-transform:uppercase; letter-spacing:.13em;
+  color:var(--muted); margin:0 0 8px;
+}
+.readout__name{
+  font-family:var(--f-display);
+  font-size:2.5rem; line-height:1.05; letter-spacing:.01em;
+  color:var(--ink);
+  word-break:break-word;
+}
+.readout__oct{ color:var(--ink-soft); font-size:.92rem; margin-top:2px }
+.readout__meta{
+  display:flex; gap:12px; margin-top:9px;
+  font-family:var(--f-num); font-size:.78rem; color:var(--muted);
+  font-variant-numeric:tabular-nums;
+}
+.stats{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px }
+.stat{ text-align:center }
+.stat b{
+  display:block; font-family:var(--f-num); font-size:1.35rem;
+  font-variant-numeric:tabular-nums; color:var(--ink); font-weight:600;
+}
+.stat span{ font-size:.68rem; text-transform:uppercase; letter-spacing:.09em; color:var(--muted) }
+.weak{ display:flex; flex-wrap:wrap; gap:6px }
+.weak__item{
+  display:flex; align-items:baseline; gap:6px;
+  border:1px solid var(--edge); border-radius:8px;
+  padding:5px 9px; font-size:.84rem; background:var(--paper-2);
+}
+.weak__item i{ font-style:normal; font-family:var(--f-display) }
+.weak__item span{ font-family:var(--f-num); font-size:.74rem; color:var(--bad); font-variant-numeric:tabular-nums }
+.weak__empty{ color:var(--muted); font-size:.85rem; margin:0 }
+
+/* ─── Клавиатура ─────────────────────────────────────────────────────────── */
+.board{
+  grid-area:board;
+  background:linear-gradient(180deg, var(--shell), light-dark(#1E212B, #101319));
+  border-radius:14px;
+  padding:9px 10px 12px;
+  box-shadow:var(--shadow);
+  overflow:hidden;
+}
+.board__bar{ display:flex; align-items:center; gap:12px; padding:0 2px 8px }
+.seg--dark{ background:rgba(255,255,255,.055); border-color:rgba(255,255,255,.11) }
+.seg--dark button{ color:rgba(255,255,255,.6); font-size:.75rem; padding:5px 11px }
+.seg--dark button:hover{ color:#fff }
+.seg--dark button[aria-pressed="true"]{ background:var(--brass); color:#1A1206 }
+.board__hint{ font-size:.74rem; color:rgba(255,255,255,.42); margin-left:auto; text-align:right }
+.board__scroll{
+  overflow-x:auto; overscroll-behavior-x:contain;
+  scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.22) transparent;
+}
+.board__scroll::-webkit-scrollbar{ height:7px }
+.board__scroll::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.2); border-radius:4px }
+.board__felt{
+  height:5px; border-radius:3px;
+  background:linear-gradient(180deg, color-mix(in srgb, var(--felt) 70%, #fff 12%), var(--felt));
+  box-shadow:0 1px 3px rgba(0,0,0,.5) inset;
+  margin-bottom:8px;
+}
+.keys{
+  position:relative;
+  height:196px;
+  display:flex;
+  user-select:none; -webkit-user-select:none;
+  touch-action:manipulation;
+}
+
+.key{
+  appearance:none; padding:0; margin:0; cursor:pointer;
+  position:relative;
+  display:flex; align-items:flex-end; justify-content:center;
+  transition:transform .05s ease-out, filter .12s;
+}
+.key::after{
+  content:""; position:absolute; inset:0; border-radius:inherit;
+  opacity:0; transition:opacity .16s; pointer-events:none;
+}
+.key__lbl{
+  position:relative; z-index:2;
+  font-size:.72rem; letter-spacing:.01em; pointer-events:none;
+  line-height:1;
+}
+.key__lbl sup{ font-size:.7em; opacity:.7 }
+
+.key--w{
+  flex:1 1 0; height:100%;
+  background:linear-gradient(180deg, var(--wk-1) 0%, var(--wk-1) 72%, var(--wk-2) 100%);
+  border:1px solid var(--wk-edge);
+  border-top:0;
+  border-radius:0 0 6px 6px;
+  box-shadow:0 4px 0 var(--wk-lip), 0 6px 9px -4px rgba(0,0,0,.5);
+  color:var(--key-ink);
+}
+.key--w .key__lbl{ padding-bottom:11px }
+.key--w:hover{ filter:brightness(1.02) }
+.key--w.is-down{ transform:translateY(3px); box-shadow:0 1px 0 var(--wk-lip); filter:brightness(.97) }
+
+.key--b{
+  position:absolute; top:0; z-index:3;
+  height:62%;
+  background:linear-gradient(180deg, var(--bk-1) 0%, var(--bk-2) 68%, #000 100%);
+  border:0; border-radius:0 0 5px 5px;
+  box-shadow:0 4px 0 #000, 0 7px 10px -4px rgba(0,0,0,.7), inset 0 -3px 5px rgba(255,255,255,.10);
+  color:#EDEAE0;
+}
+/* Чёрная клавиша узкая — подпись ставим боком, знак альтерации оставляем прямым */
+.key--b .key__lbl{
+  writing-mode:vertical-rl; text-orientation:mixed;
+  font-size:.62rem; margin-bottom:9px; letter-spacing:.02em;
+}
+.key--b .acc{ text-orientation:upright; letter-spacing:0 }
+.key--b.is-down{ transform:translateY(3px); box-shadow:0 1px 0 #000, inset 0 -2px 4px rgba(255,255,255,.08) }
+
+.key.is-held::after{ opacity:1; background:var(--brass-soft) }
+.key.is-right::after{ opacity:1; background:var(--ok-soft) }
+.key.is-wrong::after{ opacity:1; background:var(--bad-soft) }
+.key.is-hint::after{ opacity:1; background:var(--brass-soft) }
+.key.is-target::after{ opacity:1; background:var(--brass-soft); animation:target-pulse 1.5s ease-in-out infinite }
+@keyframes target-pulse{ 0%,100%{ opacity:.55 } 50%{ opacity:1 } }
+.key.is-target{ z-index:5 }
+.key--w.is-target{ box-shadow:0 0 0 2px var(--brass), 0 4px 0 var(--wk-lip), 0 6px 9px -4px rgba(0,0,0,.5) }
+.key--b.is-target{ box-shadow:0 0 0 2px var(--brass), 0 4px 0 #000 }
+
+/* Отвес: латунная нить от ноты к клавише */
+.link{
+  position:absolute; inset:0; width:100%; height:100%;
+  pointer-events:none; z-index:4; overflow:visible;
+}
+.link path{
+  fill:none; stroke:var(--brass-line); stroke-width:1.6;
+  stroke-linecap:round; stroke-dasharray:1 0;
+}
+.link circle{ fill:var(--brass-line) }
+@keyframes draw{ from{ stroke-dashoffset:var(--len) } to{ stroke-dashoffset:0 } }
+
+/* ─── Выдвижные панели ───────────────────────────────────────────────────── */
+.sheet{
+  position:fixed; inset:0; z-index:40;
+  display:none;
+}
+.sheet[open]{ display:block }
+.sheet__scrim{
+  position:absolute; inset:0;
+  background:light-dark(rgba(24,28,42,.34), rgba(0,0,0,.6));
+  backdrop-filter:blur(2px);
+}
+.sheet__panel{
+  position:absolute; top:0; right:0; bottom:0;
+  width:min(420px, 100%);
+  background:var(--paper);
+  border-left:1px solid var(--edge);
+  box-shadow:-24px 0 60px -30px rgba(0,0,0,.6);
+  overflow-y:auto;
+  padding:20px 22px 40px;
+  display:flex; flex-direction:column; gap:20px;
+  animation:slide-in .22s ease-out;
+}
+@keyframes slide-in{ from{ transform:translateX(22px); opacity:0 } to{ transform:none; opacity:1 } }
+.sheet__head{ display:flex; align-items:center; justify-content:space-between; gap:12px }
+.sheet__head h2{ margin:0; font-family:var(--f-display); font-size:1.24rem; font-weight:600 }
+.sheet__close{
+  appearance:none; cursor:pointer; border:1px solid var(--edge); background:var(--paper-2);
+  color:var(--ink-soft); border-radius:8px; width:32px; height:32px; font-size:1rem; line-height:1;
+}
+.sheet__close:hover{ color:var(--ink) }
+
+.field{ display:flex; flex-direction:column; gap:7px }
+.field__label{ font-size:.8rem; color:var(--ink-soft) }
+.seg{ display:flex; gap:3px; padding:3px; background:var(--paper-2); border:1px solid var(--edge); border-radius:9px }
+.seg button{
+  appearance:none; border:0; background:transparent; cursor:pointer;
+  flex:1 1 0; padding:7px 6px; border-radius:6px;
+  font-size:.82rem; color:var(--ink-soft); white-space:nowrap;
+  transition:background .14s, color .14s;
+}
+.seg button:hover{ color:var(--ink) }
+.seg button[aria-pressed="true"]{ background:var(--brass); color:light-dark(#FFF8E9,#1A1206) }
+.switch{ display:flex; align-items:center; justify-content:space-between; gap:12px; cursor:pointer }
+.switch input{ appearance:none; width:40px; height:23px; border-radius:12px; background:var(--line); position:relative; cursor:pointer; transition:background .18s; flex:none }
+.switch input::after{ content:""; position:absolute; top:3px; left:3px; width:17px; height:17px; border-radius:50%; background:var(--paper); transition:transform .18s }
+.switch input:checked{ background:var(--brass) }
+.switch input:checked::after{ transform:translateX(17px) }
+.range{ width:100%; accent-color:var(--brass) }
+
+.prose{ font-size:.9rem; line-height:1.6; color:var(--ink-soft) }
+.prose h3{ font-family:var(--f-display); font-size:1rem; color:var(--ink); margin:18px 0 6px; font-weight:600 }
+.prose h3:first-child{ margin-top:0 }
+.prose p{ margin:0 0 8px }
+.prose ul{ margin:0 0 8px; padding-left:18px }
+.prose li{ margin-bottom:4px }
+.prose b{ color:var(--ink); font-weight:600 }
+.prose .mnemo{ font-family:var(--f-display); color:var(--ink); font-size:.98rem }
+.prose kbd{
+  font-family:var(--f-num); font-size:.76rem;
+  border:1px solid var(--edge); border-bottom-width:2px; border-radius:5px;
+  padding:1px 5px; background:var(--paper-2); color:var(--ink);
+}
+.danger{
+  appearance:none; cursor:pointer; align-self:flex-start;
+  border:1px solid var(--bad); color:var(--bad); background:transparent;
+  border-radius:8px; padding:8px 14px; font-size:.84rem;
+}
+.danger:hover{ background:var(--bad-soft) }
+
+.hint{ font-size:.78rem; color:var(--muted); margin:0 }
+
+/* ─── Курс ───────────────────────────────────────────────────────────────── */
+.course{ display:flex; flex-direction:column; gap:18px }
+.course__top{
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  background:var(--paper); border:1px solid var(--edge); border-radius:var(--r);
+  padding:12px 14px;
+}
+.badge{
+  display:flex; align-items:baseline; gap:7px;
+  padding:5px 12px 5px 0; border-right:1px solid var(--edge);
+}
+.badge b{ font-family:var(--f-num); font-size:1.3rem; font-variant-numeric:tabular-nums; color:var(--brass) }
+.badge span{ font-size:.78rem; color:var(--muted) }
+.badge--goal{ display:flex; align-items:center; gap:9px; border-right:0 }
+.badge--goal b{ font-size:.92rem; color:var(--ink) }
+.ring{ width:34px; height:34px; flex:none; transform:rotate(-90deg) }
+.ring__bed{ fill:none; stroke:var(--edge); stroke-width:4 }
+.ring__arc{
+  fill:none; stroke:var(--brass); stroke-width:4; stroke-linecap:round;
+  stroke-dasharray:100.5; stroke-dashoffset:100.5;
+  transition:stroke-dashoffset .5s ease-out;
+}
+.course__top .chip{ margin-left:auto }
+
+.path{ display:flex; flex-direction:column; gap:12px }
+.unit{
+  background:var(--paper); border:1px solid var(--edge); border-radius:var(--r);
+  padding:14px 16px 16px;
+  display:grid; gap:12px;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+}
+@media (max-width:760px){ .unit{ grid-template-columns:minmax(0,1fr) } }
+.unit.is-locked{ opacity:.55 }
+.unit__eyebrow{
+  font-size:.68rem; text-transform:uppercase; letter-spacing:.14em; color:var(--brass);
+  display:block; margin-bottom:3px;
+}
+.unit__title{ font-family:var(--f-display); font-size:1.16rem; margin:0; font-weight:600 }
+.unit__sub{ margin:3px 0 0; font-size:.86rem; color:var(--muted) }
+.unit__nodes{ display:flex; gap:9px; flex-wrap:wrap }
+
+/* Урок — маленькая клавиша: закрашивается латунью по мере прохождения */
+.node{
+  appearance:none; cursor:pointer; position:relative;
+  width:60px; padding:9px 4px 8px;
+  border:1px solid var(--wk-edge);
+  border-radius:3px 3px 9px 9px;
+  background:linear-gradient(180deg, var(--wk-1), var(--wk-2));
+  box-shadow:0 3px 0 var(--wk-lip);
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  color:var(--key-ink);
+  transition:transform .1s, box-shadow .1s, filter .16s;
+}
+.node:hover:not(:disabled){ filter:brightness(1.04) }
+.node:active:not(:disabled){ transform:translateY(2px); box-shadow:0 1px 0 var(--wk-lip) }
+.node__n{ font-family:var(--f-display); font-size:1rem; line-height:1 }
+.node__stars{ display:flex; gap:3px }
+.node__stars i{
+  width:5px; height:5px; border-radius:1px; transform:rotate(45deg);
+  background:var(--wk-edge); display:block;
+}
+.node__stars i.on{ background:var(--brass) }
+.node.is-done{
+  background:linear-gradient(180deg, var(--brass), color-mix(in srgb, var(--brass) 78%, #000 12%));
+  border-color:transparent; color:light-dark(#FFF8E9,#1A1206);
+}
+.node.is-done .node__stars i{ background:rgba(255,255,255,.35) }
+.node.is-done .node__stars i.on{ background:light-dark(#FFF8E9,#2A1D06) }
+.node.is-now{ box-shadow:0 0 0 2px var(--brass), 0 3px 0 var(--wk-lip) }
+.node:disabled{ cursor:default; opacity:.5; box-shadow:0 2px 0 var(--wk-lip) }
+.node__lock{ width:11px; height:11px; opacity:.6 }
+
+/* ─── Полоса урока ───────────────────────────────────────────────────────── */
+.lessonbar{
+  display:flex; align-items:center; gap:14px;
+  background:var(--paper); border:1px solid var(--edge); border-radius:var(--r);
+  padding:10px 14px;
+}
+.lessonbar__back{
+  appearance:none; cursor:pointer; flex:none;
+  width:32px; height:32px; border-radius:8px;
+  border:1px solid var(--edge); background:var(--paper-2); color:var(--ink-soft);
+  font-size:1rem; line-height:1;
+}
+.lessonbar__back:hover{ color:var(--ink) }
+.lessonbar__meta{ flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:6px }
+.lessonbar__title{ font-size:.86rem; color:var(--ink-soft) }
+.bar{ height:7px; border-radius:4px; background:var(--paper-2); border:1px solid var(--edge); overflow:hidden }
+.bar i{ display:block; height:100%; width:0; background:var(--brass); border-radius:4px; transition:width .3s ease-out }
+.hearts{ display:flex; gap:5px; flex:none }
+.hearts svg{ width:19px; height:19px }
+.hearts .heart{ fill:var(--bad) }
+.hearts .heart--out{ fill:none; stroke:var(--line); stroke-width:1.6 }
+
+/* ─── Итог урока ─────────────────────────────────────────────────────────── */
+.result{ position:fixed; inset:0; z-index:50; display:grid; place-items:center; padding:20px }
+.result::before{
+  content:""; position:absolute; inset:0;
+  background:light-dark(rgba(24,28,42,.4), rgba(0,0,0,.66)); backdrop-filter:blur(3px);
+}
+.result__card{
+  position:relative; width:min(400px,100%);
+  background:var(--paper); border:1px solid var(--edge); border-radius:16px;
+  padding:26px 24px 22px; text-align:center;
+  box-shadow:0 30px 70px -30px rgba(0,0,0,.6);
+  animation:pop .26s cubic-bezier(.2,.9,.3,1.25) both;
+}
+@keyframes pop{ from{ transform:scale(.9); opacity:0 } to{ transform:none; opacity:1 } }
+.result__stars{ display:flex; justify-content:center; gap:9px; margin-bottom:14px }
+.result__stars i{
+  width:20px; height:20px; border-radius:3px; transform:rotate(45deg);
+  background:var(--edge); display:block;
+}
+.result__stars i.on{ background:var(--brass); box-shadow:0 0 18px -4px var(--brass) }
+.result__title{ font-family:var(--f-display); font-size:1.5rem; margin:0 0 6px; font-weight:600 }
+.result__text{ margin:0 0 16px; color:var(--muted); font-size:.9rem }
+.result__rows{ margin:0 0 18px; display:grid; grid-template-columns:1fr auto; gap:7px 12px; text-align:left }
+.result__rows dt{ font-size:.86rem; color:var(--ink-soft) }
+.result__rows dd{ margin:0; font-family:var(--f-num); font-size:.86rem; font-variant-numeric:tabular-nums; text-align:right }
+.result__actions{ display:flex; gap:8px }
+.result__actions .chip{ flex:1 1 0 }
+.chip--go{ background:var(--brass); border-color:var(--brass); color:light-dark(#FFF8E9,#1A1206) }
+.chip--go:hover{ filter:brightness(1.06) }
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{ animation-duration:.001s !important; animation-iteration-count:1 !important; transition-duration:.001s !important }
+}
+
+</style>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand__mark" id="brandMark" aria-hidden="true"></span>
+      <span class="brand__text">
+        <span class="brand__title">Нота&#8202;↔&#8202;Клавиша</span>
+        <span class="brand__sub">тренажёр нотного стана</span>
+      </span>
+    </div>
+
+    <nav class="screens" id="screens" role="tablist" aria-label="Раздел">
+      <button class="screen-tab" role="tab" data-screen="course" aria-selected="true">Курс</button>
+      <button class="screen-tab" role="tab" data-screen="practice" aria-selected="false">Тренажёр</button>
+    </nav>
+
+    <div class="tools">
+      <button class="tool" id="btnSound" aria-pressed="true" title="Звук (S)">Звук</button>
+      <button class="tool" id="btnHelp">Справка</button>
+      <button class="tool" id="btnSettings">Настройки</button>
+    </div>
+  </header>
+
+  <section class="course" id="courseScreen">
+    <header class="course__top">
+      <div class="badge"><b id="cXp">0</b><span>опыта</span></div>
+      <div class="badge"><b id="cDays">0</b><span>дней подряд</span></div>
+      <div class="badge badge--goal">
+        <svg class="ring" viewBox="0 0 40 40" aria-hidden="true">
+          <circle class="ring__bed" cx="20" cy="20" r="16"></circle>
+          <circle class="ring__arc" cx="20" cy="20" r="16" id="cRing"></circle>
+        </svg>
+        <span><b id="cGoal">0</b> из <span id="cGoalMax">40</span> сегодня</span>
+      </div>
+      <button class="chip chip--wide" id="cReview">Разминка на трудных нотах</button>
+    </header>
+    <div class="path" id="path"></div>
+  </section>
+
+  <nav class="modes" id="modes" role="tablist" aria-label="Режим занятия">
+    <button class="mode" role="tab" data-mode="free" aria-selected="true">Свободно</button>
+    <button class="mode" role="tab" data-mode="noteToKey" aria-selected="false">Нота → клавиша</button>
+    <button class="mode" role="tab" data-mode="keyToNote" aria-selected="false">Клавиша → нота</button>
+    <button class="mode" role="tab" data-mode="nameNote" aria-selected="false">Название</button>
+  </nav>
+
+  <div class="lessonbar" id="lessonBar" hidden>
+    <button class="lessonbar__back" id="lessonQuit" aria-label="Выйти из урока">←</button>
+    <div class="lessonbar__meta">
+      <span class="lessonbar__title" id="lessonTitle"></span>
+      <div class="bar"><i id="lessonProgress"></i></div>
+    </div>
+    <div class="hearts" id="hearts" aria-label="Жизни"></div>
+  </div>
+
+  <main class="stage" id="stage">
+    <section class="score">
+      <svg class="staff" id="staff" role="img" aria-label="Нотный стан"></svg>
+      <p class="cue" id="cue"></p>
+      <div class="answer" id="answer"></div>
+    </section>
+
+    <aside class="rail">
+      <div class="card readout">
+        <p class="card__title">Нота</p>
+        <div class="readout__name" id="roName">—</div>
+        <div class="readout__oct" id="roOct">нажми любую клавишу</div>
+        <div class="readout__meta">
+          <span id="roSci"></span>
+          <span id="roHz"></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="card__title">Тренировка</p>
+        <div class="stats">
+          <div class="stat"><b id="stStreak">0</b><span>серия</span></div>
+          <div class="stat"><b id="stBest">0</b><span>рекорд</span></div>
+          <div class="stat"><b id="stAcc">—</b><span>точность</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="card__title">Трудные ноты</p>
+        <div class="weak" id="weak"><p class="weak__empty">Пока пусто — позанимайся немного.</p></div>
+      </div>
+    </aside>
+
+    <section class="board" id="board">
+      <div class="board__bar">
+        <div class="seg seg--dark" data-setting="range">
+          <button data-value="2">2 октавы</button>
+          <button data-value="4">4 октавы</button>
+          <button data-value="88">Все 88</button>
+        </div>
+        <span class="board__hint" id="boardHint"></span>
+      </div>
+      <div class="board__scroll" id="boardScroll">
+        <div class="board__felt"></div>
+        <div class="keys" id="keys"></div>
+      </div>
+    </section>
+
+    <svg class="link" id="link" aria-hidden="true"></svg>
+  </main>
+
+  <div class="result" id="result" role="dialog" aria-modal="true" hidden>
+    <div class="result__card">
+      <div class="result__stars" id="resStars"></div>
+      <h2 class="result__title" id="resTitle"></h2>
+      <p class="result__text" id="resText"></p>
+      <dl class="result__rows" id="resRows"></dl>
+      <div class="result__actions">
+        <button class="chip chip--wide" id="resAgain">Ещё раз</button>
+        <button class="chip chip--wide chip--go" id="resNext">Дальше</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="sheetSettings" role="dialog" aria-modal="true" aria-label="Настройки">
+  <div class="sheet__scrim" data-close></div>
+  <div class="sheet__panel">
+    <div class="sheet__head">
+      <h2>Настройки</h2>
+      <button class="sheet__close" data-close aria-label="Закрыть">✕</button>
+    </div>
+
+    <div class="field">
+      <span class="field__label">Названия нот</span>
+      <div class="seg" data-setting="naming">
+        <button data-value="ru">До Ре Ми</button>
+        <button data-value="lat">C D E</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="field__label">Чёрные клавиши записывать как</span>
+      <div class="seg" data-setting="accidental">
+        <button data-value="sharp">Диезы ♯︎</button>
+        <button data-value="flat">Бемоли ♭︎</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="field__label">Подписи на клавишах</span>
+      <div class="seg" data-setting="labels">
+        <button data-value="all">Все</button>
+        <button data-value="c">Только До</button>
+        <button data-value="none">Нет</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="field__label">Диапазон клавиатуры</span>
+      <div class="seg" data-setting="range">
+        <button data-value="2">2 октавы</button>
+        <button data-value="4">4 октавы</button>
+        <button data-value="88">88 клавиш</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="field__label">Вид нотного стана</span>
+      <div class="seg" data-setting="staffMode">
+        <button data-value="ladder">Единая лестница</button>
+        <button data-value="standard">Как в нотах</button>
+      </div>
+      <p class="hint">«Лестница» соединяет скрипичный и басовый ключи в одну непрерывную линейку — до первой октавы стоит ровно посередине.</p>
+    </div>
+
+    <div class="field">
+      <span class="field__label">Ключи в тренировке</span>
+      <div class="seg" data-setting="scope">
+        <button data-value="treble">Скрипичный</button>
+        <button data-value="bass">Басовый</button>
+        <button data-value="both">Оба</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="field__label">Клавиши в тренировке</span>
+      <div class="seg" data-setting="blacks">
+        <button data-value="white">Только белые</button>
+        <button data-value="all">Все</button>
+      </div>
+    </div>
+
+    <label class="switch">
+      <span class="field__label">Подсказка после двух ошибок</span>
+      <input type="checkbox" id="setHints">
+    </label>
+
+    <label class="switch">
+      <span class="field__label">Звук</span>
+      <input type="checkbox" id="setSound">
+    </label>
+
+    <div class="field">
+      <span class="field__label">Громкость</span>
+      <input class="range" type="range" id="setVolume" min="0" max="100" step="1">
+    </div>
+
+    <div class="field">
+      <span class="field__label">Тема</span>
+      <div class="seg" data-setting="theme">
+        <button data-value="auto">Авто</button>
+        <button data-value="light">Светлая</button>
+        <button data-value="dark">Тёмная</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="field__label">MIDI-клавиатура</span>
+      <button class="chip chip--wide" id="btnMidi">Подключить</button>
+      <p class="hint" id="midiStatus">Если у тебя есть MIDI-клавиатура, играй прямо на ней.</p>
+    </div>
+
+    <button class="danger" id="btnReset">Сбросить статистику</button>
+  </div>
+</div>
+
+<div class="sheet" id="sheetHelp" role="dialog" aria-modal="true" aria-label="Справка">
+  <div class="sheet__scrim" data-close></div>
+  <div class="sheet__panel">
+    <div class="sheet__head">
+      <h2>Как читать стан</h2>
+      <button class="sheet__close" data-close aria-label="Закрыть">✕</button>
+    </div>
+    <div class="prose">
+      <h3>Курс и тренажёр</h3>
+      <p>В <b>курсе</b> уроки идут лестницей: следующий открывается, когда пройден предыдущий. В уроке три жизни, а промахнувшаяся нота возвращается в конец очереди — пока не возьмёшь её верно. Клавиатура на время урока сужается до нужного участка.</p>
+      <p><b>Тренажёр</b> — те же задания, но без ограничений: свой диапазон, свои ключи, сколько угодно попыток.</p>
+
+      <h3>Скрипичный ключ</h3>
+      <p>Он обвивает вторую линейку снизу — это <b>соль первой октавы</b>, отсюда и второе имя «ключ соль».</p>
+      <ul>
+        <li>На линейках снизу вверх: <span class="mnemo">Ми · Соль · Си · Ре · Фа</span></li>
+        <li>Между линейками: <span class="mnemo">Фа · Ля · До · Ми</span></li>
+      </ul>
+
+      <h3>Басовый ключ</h3>
+      <p>Две точки обнимают четвёртую линейку снизу — это <b>фа малой октавы</b>, «ключ фа».</p>
+      <ul>
+        <li>На линейках снизу вверх: <span class="mnemo">Соль · Си · Ре · Фа · Ля</span></li>
+        <li>Между линейками: <span class="mnemo">Ля · До · Ми · Соль</span></li>
+      </ul>
+
+      <h3>До первой октавы</h3>
+      <p>Оно не помещается ни на один стан и живёт на короткой добавочной линейке ровно между ними. Это середина клавиатуры и главный ориентир.</p>
+
+      <h3>Добавочные линейки</h3>
+      <p>Когда нота уходит выше или ниже стана, линейки просто продолжают лестницу — каждая следующая через одну ступень.</p>
+
+      <h3>Октавы по-русски</h3>
+      <ul>
+        <li>субконтроктава, контроктава, большая, малая</li>
+        <li>первая (начинается с до посередине), вторая, третья, четвёртая, пятая</li>
+      </ul>
+
+      <h3>Клавиатура компьютера</h3>
+      <p>Нижний ряд <kbd>Z</kbd> <kbd>X</kbd> <kbd>C</kbd> <kbd>V</kbd> <kbd>B</kbd> <kbd>N</kbd> <kbd>M</kbd> — белые клавиши, <kbd>S</kbd> <kbd>D</kbd> <kbd>G</kbd> <kbd>H</kbd> <kbd>J</kbd> — чёрные. Верхний ряд <kbd>Q</kbd>…<kbd>U</kbd> — октавой выше.</p>
+      <ul>
+        <li><kbd>←</kbd> <kbd>→</kbd> — сдвинуть октаву</li>
+        <li><kbd>Пробел</kbd> — повторить задание</li>
+        <li><kbd>Shift</kbd>+<kbd>1</kbd>…<kbd>4</kbd> — переключить режим</li>
+        <li><kbd>Esc</kbd> — закрыть панель</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+'use strict';
+/* Нота ↔ Клавиша — ядро: теория, отрисовка стана, клавиатура, свободная практика.
+   Глифы ключей и знаков альтерации вшиты сборщиком как SVG-пути.
+   Сборщик оборачивает этот файл и course.js в одну область видимости. */
+
+const GLYPHS = {"treble":{"rule":"nonzero","x":43.9,"y":-800.3,"w":470.3,"h":1035.7,"d":"M293.9,-477.5L321.8,-339.4C324.7,-339.7 327.6,-339.8 330.6,-339.8 333.5,-339.8 336.3,-339.8 338.9,-339.8 364.3,-339.8 387.7,-334.9 409.2,-325 430.7,-315 449.2,-301.8 464.8,-285.4 480.5,-269 492.6,-250.1 501.2,-228.8 509.8,-207.4 514.2,-185.4 514.2,-162.6 514.2,-144 511.3,-126.2 505.6,-109.1 499.9,-92 491.6,-76.4 480.7,-62.3 469.8,-48.1 456.5,-35.7 440.9,-25.1 425.3,-14.6 407.6,-6.7 387.7,-1.5L404.3,85C404.9,89.5 405.5,93.8 406,97.9 406.5,102 406.7,106.3 406.7,110.8 406.7,127.8 403.7,143.7 397.7,158.7 391.7,173.7 383.4,186.8 372.8,198.2 362.2,209.6 349.9,218.7 335.9,225.3 321.9,232 307,235.4 291,235.4 276.4,235.4 262,233.2 248,228.8 234,224.4 221.6,218.2 210.7,210.2 199.8,202.2 191,192.4 184.3,180.7 177.7,168.9 174.3,155.8 174.3,141.1 174.3,127.1 178.3,114.7 186.3,103.8 194.3,92.9 207.4,86.1 225.6,83.5 227.2,83.2 228.9,82.9 230.7,82.8 232.5,82.6 234.2,82.5 235.8,82.5 245,82.5 253.3,84.4 260.7,88.1 268.2,91.9 274.7,96.8 280,103 285.4,109.2 289.5,116.1 292.2,123.8 295,131.4 296.4,139.3 296.4,147.5 296.4,158.2 293.6,168.6 288.1,178.7 282.6,188.8 273.8,196.6 261.7,202.1 266.3,203.8 270.7,204.8 274.9,205.3 279.1,205.8 283.5,206.1 288.1,206.1 300.5,206.1 311.6,203.5 321.5,198.5 331.5,193.4 339.8,186.7 346.7,178.2 353.5,169.8 358.8,159.7 362.5,148.2 366.3,136.6 368.2,124.2 368.2,110.8 368.2,106.9 367.8,101.6 366.9,94.7 366.1,87.9 365.4,82.5 364.7,78.6L350.6,5.4C341.8,7.6 330.2,8.8 315.9,8.8 283.7,8.8 251.9,5.4 220.5,-1.5 189,-8.3 160.7,-20 135.5,-36.6 110.3,-53.2 89.4,-75.3 72.8,-102.8 56.2,-130.3 46.7,-164.7 44.4,-206.1 44.1,-209.3 43.9,-212.6 43.9,-215.8 43.9,-219.1 43.9,-222.3 43.9,-225.6 43.9,-256.2 48.2,-286.2 56.6,-315.7 65.1,-345.1 78.6,-372.6 97.2,-397.9 118.7,-425.9 141.9,-449.9 167,-469.7 192.1,-489.6 219.9,-507.6 250.5,-523.9 245.6,-548.7 241.5,-570 238,-587.9 234.6,-605.8 231.8,-621 229.5,-633.5 227.2,-646.1 225.4,-656.4 224.1,-664.6 222.8,-672.7 221.8,-679.4 220.9,-684.6 220.1,-689.8 219.6,-694 219.5,-697.3 219.3,-700.5 219.2,-703.6 219.2,-706.5 219.2,-718.9 221,-730.7 224.6,-741.9 228.2,-753.2 233.4,-763.1 240.2,-771.7 247.1,-780.4 255.5,-787.3 265.4,-792.5 275.3,-797.7 286.6,-800.3 299.3,-800.3 314.9,-800.3 328.8,-796.6 340.8,-789.3 352.9,-782 362.9,-772.6 370.8,-761.2 378.8,-749.8 384.8,-737.1 388.9,-723.1 393,-709.1 395,-695.5 395,-682.1 395,-662.9 392,-643.9 386,-625 380,-606.1 372.2,-587.9 362.5,-570.3 352.9,-552.7 342.1,-536.1 330.1,-520.3 318,-504.5 306,-490.2 293.9,-477.5z M307.1,-725.1C296.7,-725.1 288.5,-722.9 282.5,-718.5 276.4,-714.1 271.9,-709 268.8,-703.1 265.7,-697.3 263.8,-691.3 262.9,-685.3 262.1,-679.3 261.7,-674.6 261.7,-671.4 261.7,-647.6 264,-625.3 268.6,-604.5 273.1,-583.7 277.2,-563.3 280.8,-543.5 293.1,-550.6 304,-559 313.2,-568.6 322.5,-578.2 330.2,-588.4 336.4,-599.1 342.6,-609.9 347.2,-620.8 350.3,-631.8 353.4,-642.9 355,-653.3 355,-663.1 355,-670.2 354.2,-677.6 352.8,-685.1 351.3,-692.5 348.8,-699.2 345.2,-705.1 341.6,-710.9 336.8,-715.7 330.6,-719.5 324.4,-723.2 316.6,-725.1 307.1,-725.1z M344.2,-26.9L302.2,-250.5C289.9,-247.6 279.1,-242.6 269.8,-235.6 260.5,-228.6 252.8,-220.3 246.6,-210.7 240.4,-201.1 235.8,-190.7 232.7,-179.4 229.6,-168.2 228,-156.9 228,-145.5 228,-141.3 228.3,-137 228.8,-132.8 229.2,-128.6 229.8,-124.5 230.5,-120.6 215.2,-127.8 203.6,-137.9 195.8,-150.9 188,-163.9 184.1,-178.4 184.1,-194.3 184.1,-210.3 186.8,-225.4 192.4,-239.7 197.9,-254.1 205.5,-267.1 215.1,-278.8 224.7,-290.5 235.8,-300.8 248.3,-309.6 260.8,-318.4 274.1,-325.4 288.1,-330.6 284.5,-349.4 281.1,-367 277.8,-383.3L265.1,-448.2C242.4,-426.8 219.7,-405.4 197.3,-384 174.8,-362.7 153.2,-339.8 132.3,-315.4 125.5,-307.3 118.8,-298.8 112.3,-290 105.8,-281.2 100.1,-272.1 95.2,-262.5 90.3,-252.8 86.4,-242.9 83.5,-232.7 80.6,-222.4 79.1,-211.8 79.1,-200.7 79.4,-177.9 83.1,-157.8 90.1,-140.4 97.1,-123 106.4,-107.7 118.2,-94.5 129.9,-81.3 143.5,-70.2 158.9,-61.3 174.4,-52.3 190.6,-45.1 207.5,-39.6 224.4,-34 241.6,-30 259,-27.6 276.4,-25.1 293,-23.9 308.6,-23.9 320.6,-23.9 332.5,-24.9 344.2,-26.9z M337.4,-253.9L380.4,-36.6C395,-40.5 407.9,-46.6 418.9,-54.9 430,-63.2 439.2,-72.8 446.5,-83.5 453.9,-94.2 459.3,-105.7 462.9,-117.9 466.5,-130.1 468.3,-142.3 468.3,-154.3 468.3,-173.2 464.4,-189 456.8,-201.7 449.1,-214.4 439.1,-224.6 426.8,-232.4 414.4,-240.2 400.4,-245.8 384.8,-249 369.1,-252.3 353.4,-253.9 337.4,-253.9z"},"bass":{"rule":"nonzero","x":46.9,"y":-727.5,"w":605.4,"h":639.6,"d":"M134.3,-487.8C137.5,-490.4 141.4,-492.7 146,-494.6 149.9,-496.3 154.7,-497.8 160.4,-499.3 166.1,-500.7 172.7,-501.5 180.2,-501.5 191.2,-501.5 201.1,-499.4 209.7,-495.4 218.3,-491.3 225.7,-485.8 231.7,-479 237.7,-472.2 242.4,-464.3 245.6,-455.3 248.9,-446.4 250.5,-437.2 250.5,-427.7 250.5,-416.3 248.3,-406 243.9,-396.7 239.5,-387.5 233.7,-379.6 226.6,-373 219.4,-366.5 211.3,-361.6 202.1,-358.2 193,-354.7 183.6,-353 173.8,-353 159.2,-353 144.4,-356.6 129.4,-363.8 114.4,-370.9 100.8,-381.5 88.6,-395.5 76.4,-409.5 66.4,-426.8 58.6,-447.5 50.8,-468.2 46.9,-491.9 46.9,-518.6 46.9,-554 53,-585 65.2,-611.3 77.4,-637.7 93.8,-659.4 114.5,-676.5 135.2,-693.6 159,-706.4 186,-714.8 213.1,-723.3 241.2,-727.5 270.5,-727.5 304.4,-727.5 335.4,-722.4 363.5,-712.2 391.7,-701.9 415.9,-686.6 436.3,-666.3 456.6,-645.9 472.4,-620.4 483.6,-589.8 494.9,-559.2 500.5,-523.4 500.5,-482.4 500.5,-442.4 496,-406.1 487.1,-373.5 478.1,-341 465.8,-311.7 450.2,-285.6 434.6,-259.6 416.3,-236.7 395.3,-216.8 374.3,-196.9 351.9,-179.7 328.1,-165 304.4,-150.4 279.8,-138.1 254.4,-128.2 229,-118.2 203.9,-110.4 179.2,-104.5 154.5,-98.6 130.8,-94.4 108.2,-91.8 85.5,-89.2 65.1,-87.9 46.9,-87.9L46.9,-155.3C60.2,-155.3 75.8,-156 93.5,-157.5 111.2,-158.9 130,-161.8 149.9,-166 169.8,-170.2 190.1,-175.9 210.9,-183.1 231.8,-190.3 252.1,-199.5 272,-210.9 291.8,-222.3 310.5,-236 328.1,-252 345.7,-267.9 361.2,-286.8 374.5,-308.6 387.9,-330.4 398.4,-355.2 406,-383.1 413.7,-410.9 417.5,-442.4 417.5,-477.5 417.5,-511.7 413.5,-540.5 405.5,-564 397.5,-587.4 386.8,-606.3 373.3,-620.6 359.8,-634.9 344.2,-645.2 326.4,-651.4 308.7,-657.6 290,-660.6 270.5,-660.6 252.9,-660.6 235.7,-658.2 218.8,-653.3 201.8,-648.4 186.8,-640.5 173.6,-629.4 160.4,-618.3 149.8,-603.7 141.8,-585.4 133.9,-567.2 129.9,-544.9 129.9,-518.6 129.9,-514 130,-509.8 130.4,-506.1 130.7,-502.4 131.2,-499.2 131.8,-496.6 132.5,-493.3 133.3,-490.4 134.3,-487.8z M597.2,-500C582.2,-500 569.4,-505.4 558.8,-516.1 548.3,-526.9 543,-539.7 543,-554.7 543,-569.7 548.3,-582.4 558.8,-592.8 569.4,-603.2 582.2,-608.4 597.2,-608.4 612.5,-608.4 625.5,-603.2 636.2,-592.8 647,-582.4 652.3,-569.7 652.3,-554.7 652.3,-539.7 647,-526.9 636.2,-516.1 625.5,-505.4 612.5,-500 597.2,-500z M597.2,-283.2C582.2,-283.2 569.4,-288.6 558.8,-299.3 548.3,-310.1 543,-322.9 543,-337.9 543,-352.9 548.3,-365.8 558.8,-376.7 569.4,-387.6 582.2,-393.1 597.2,-393.1 612.5,-393.1 625.5,-387.6 636.2,-376.7 647,-365.8 652.3,-352.9 652.3,-337.9 652.3,-322.9 647,-310.1 636.2,-299.3 625.5,-288.6 612.5,-283.2 597.2,-283.2z"},"sharp":{"rule":"nonzero","x":23.4,"y":-700.2,"w":384.3,"h":700.2,"d":"M151.9,-499.5L279.3,-567.4 279.3,-700.2 329.6,-700.2 329.6,-594.2 407.7,-635.7 407.7,-561.5 329.6,-520 329.6,-302.2 407.7,-343.8 407.7,-269.5 329.6,-228 329.6,-84.5 279.3,-84.5 279.3,-201.2 151.9,-133.3 151.9,0 101.6,0 101.6,-106.4 23.4,-64.9 23.4,-139.2 101.6,-180.7 101.6,-398.4 23.4,-356.9 23.4,-431.2 101.6,-472.7 101.6,-604.5 151.9,-604.5z M151.9,-207.5L279.3,-275.4 279.3,-493.2 151.9,-425.3z"},"flat":{"rule":"nonzero","x":91.8,"y":-700.2,"w":289.1,"h":700.2,"d":"M380.9,-202.1C380.9,-175.8 376.6,-152.6 368.2,-132.6 359.7,-112.5 348.4,-95.1 334.2,-80.1 320.1,-65.1 303.8,-52.5 285.4,-42.2 267,-32 247.8,-23.8 227.8,-17.6 207.8,-11.4 187.7,-6.9 167.5,-4.2 147.3,-1.4 128.3,0 110.4,0L91.8,0 91.8,-700.2 142.1,-700.2 142.1,-287.1C160.3,-303.4 179,-316.2 198.2,-325.4 217.4,-334.7 239.9,-339.4 265.6,-339.4 284.2,-339.4 300.6,-336 314.9,-329.3 329.3,-322.7 341.3,-313.3 351.1,-301.3 360.8,-289.2 368.2,-274.7 373.3,-257.8 378.3,-240.9 380.9,-222.3 380.9,-202.1z M142.1,-26.4C167.8,-29 190.3,-35.2 209.7,-45.2 229.1,-55.1 245.2,-67.8 258.1,-83.3 270.9,-98.7 280.5,-116.5 286.9,-136.7 293.2,-156.9 296.4,-178.7 296.4,-202.1 296.4,-214.5 294.9,-226.2 292,-237.1 289.1,-248 284.6,-257.4 278.6,-265.4 272.5,-273.4 265,-279.7 255.9,-284.4 246.7,-289.1 236,-291.5 223.6,-291.5 208.7,-291.5 194.4,-288.3 180.9,-282 167.4,-275.6 154.5,-267.6 142.1,-257.8z"},"natural":{"rule":"nonzero","x":91.8,"y":-700.2,"w":228,"h":700.7,"d":"M91.8,-118.7L91.8,-700.2 142.1,-700.2 142.1,-498.5 289.1,-581.1 319.8,-581.1 319.8,0.5 269.5,0.5 269.5,-200.7 121.6,-118.7z M142.1,-204.1L269.5,-274.9 269.5,-496.1 142.1,-425.3z"},"brace":{"rule":"nonzero","x":43.9,"y":-793.9,"w":226.1,"h":859.3,"d":"M270,65.4C170.1,64.1,120.1,13.7,120.1,-85.9L120.1,-232.4C120.1,-298.2,94.7,-332.7,43.9,-335.9L43.9,-392.6C94.7,-395.8,120.1,-431,120.1,-498L120.1,-640.6C120.1,-741.5,170.1,-792.6,270,-793.9L270,-731.4C218.3,-730.1,192.4,-697.9,192.4,-634.8L192.4,-491.7C192.4,-423.3,168,-381.3,119.1,-365.7L119.1,-363.8C168,-349.1,192.4,-307.5,192.4,-238.8L192.4,-97.7C192.4,-61.5 198.2,-35.7 209.7,-20.3 221.3,-4.8 241.4,3.3 270,3.9z"}};
+
+/* ─── Теория ──────────────────────────────────────────────────────────── */
+const LET      = ['C','D','E','F','G','A','B'];
+const LET_RU   = ['До','Ре','Ми','Фа','Соль','Ля','Си'];
+const LET_SEMI = [0,2,4,5,7,9,11];
+const OCT_GEN  = ['субконтроктавы','контроктавы','большой октавы','малой октавы',
+                  'первой октавы','второй октавы','третьей октавы','четвёртой октавы','пятой октавы'];
+const OCT_SHORT= ['суб','К','Б','м','1','2','3','4','5'];
+
+const isBlack = m => [1,3,6,8,10].includes(((m % 12) + 12) % 12);
+
+function spell(midi, pref){
+  const pc = ((midi % 12) + 12) % 12;
+  const oct = Math.floor(midi / 12) - 1;
+  let li = LET_SEMI.indexOf(pc), alter = 0;
+  if (li < 0){
+    if (pref === 'flat'){ li = LET_SEMI.indexOf(pc + 1); alter = -1; }
+    else { li = LET_SEMI.indexOf(pc - 1); alter = 1; }
+  }
+  return { midi, li, alter, oct, dia: oct * 7 + li };
+}
+function midiFromDia(dia, alter){
+  const oct = Math.floor(dia / 7), li = dia - oct * 7;
+  return 12 * (oct + 1) + LET_SEMI[li] + alter;
+}
+const accSign = a => a === 1 ? '♯' : a === -1 ? '♭' : '';
+function noteName(sp){
+  const base = S.naming === 'ru' ? LET_RU[sp.li] : LET[sp.li];
+  return base + accSign(sp.alter);
+}
+const fullName = sp => `${noteName(sp)} ${OCT_GEN[sp.oct] || ''}`.trim();
+const sciName  = sp => LET[sp.li] + accSign(sp.alter) + sp.oct;
+const freqOf   = m => 440 * Math.pow(2, (m - 69) / 12);
+
+/* ─── Состояние ───────────────────────────────────────────────────────── */
+const STORE = 'nk-piano-v1';
+const S = {
+  naming:'ru', accidental:'sharp', labels:'c', range:'4', staffMode:'ladder',
+  scope:'both', blacks:'white', hints:true, sound:true, volume:70, theme:'auto',
+  best:0, stats:{}
+};
+Object.assign(S, (() => { try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch(e){ return {}; } })());
+const save = () => { try { localStorage.setItem(STORE, JSON.stringify(S)); } catch(e){} };
+
+const T = {                       // состояние сессии
+  mode:'free', target:null, wrong:0, streak:0, right:0, total:0,
+  held:new Set(), shown:new Set(), placeAlter:0, lock:false, last:null, kbOct:3,
+  needAlter:false
+};
+
+const RANGES = { '2':{lo:48,hi:72}, '4':{lo:36,hi:84}, '88':{lo:21,hi:108} };
+/* Урок курса на время сужает клавиатуру до нужного участка — так новичок не
+   ищет ноту среди восьмидесяти восьми клавиш. */
+let RANGE_FIX = null;
+const range = () => RANGE_FIX || RANGES[S.range] || RANGES['4'];
+
+/* Точки подключения для курса: он подменяет выбор ноты и слушает ответы. */
+const HOOK = { pick:null, beforeRound:null, onAnswer:null };
+
+function pool(){
+  const { lo, hi } = range();
+  // Клавиатуру можно раскрыть на все 88, но спрашивать ноту с девятью
+  // добавочными линейками бессмысленно — тренировка держится в разумном окне
+  let a = Math.max(lo, 36), b = Math.min(hi, 84);
+  if (S.scope === 'treble') a = Math.max(a, 60);
+  if (S.scope === 'bass')   b = Math.min(b, 59);
+  const out = [];
+  for (let m = a; m <= b; m++){
+    if (S.blacks === 'white' && isBlack(m)) continue;
+    out.push(m);
+  }
+  return out.length ? out : [60];
+}
+
+/* ─── Ссылки на DOM ───────────────────────────────────────────────────── */
+const $  = s => document.querySelector(s);
+const staffEl = $('#staff'), keysEl = $('#keys'), linkEl = $('#link'),
+      stageEl = $('#stage'), boardEl = $('#board'), scrollEl = $('#boardScroll'),
+      cueEl = $('#cue'), answerEl = $('#answer'), weakEl = $('#weak');
+const calm = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const keyEls = new Map();
+
+/* ─── Геометрия стана ─────────────────────────────────────────────────── */
+const GAP = 16, VW = 780, HALF = GAP / 2;
+const SEP = 4.5 * GAP;                       // просвет между станами в режиме «как в нотах»
+/* Доли выверены по самим контурам глифов: у басового ключа линия фа проходит
+   ровно между двумя точками, у бемоля опора — центр чаши. */
+const CLEFS = {
+  treble: { g:'treble', spaces:7.02, anchor:0.625,  dia:32 },   // спираль обвивает соль
+  bass:   { g:'bass',   spaces:2.96, anchor:0.4398, dia:24 }    // точки обнимают фа
+};
+const ACCS = {
+  '1':  { g:'sharp',   spaces:2.55, anchor:0.500 },
+  '-1': { g:'flat',    spaces:2.70, anchor:0.773 },
+  '0':  { g:'natural', spaces:2.65, anchor:0.500 }
+};
+let L = {};                                   // вычисленная раскладка
+
+const r = (n, p = 2) => +n.toFixed(p);
+
+/* Ступени, под которые сейчас размечен стан. При 88 клавишах размечать стан
+   под весь диапазон нельзя — до пятой октавы это девять добавочных линеек, и
+   стан становится нечитаемым. Поэтому по умолчанию берём удобные четыре октавы
+   и раздвигаем стан только когда нота действительно выходит за края. */
+let SPAN = null;
+function spanOf(lo, hi){
+  let dMin = Infinity, dMax = -Infinity;
+  for (let m = lo; m <= hi; m++)
+    for (const pref of ['sharp','flat']){
+      const d = spell(m, pref).dia;
+      if (d < dMin) dMin = d;
+      if (d > dMax) dMax = d;
+    }
+  return { dMin, dMax };
+}
+function baseSpan(){
+  const { lo, hi } = range();
+  return spanOf(Math.max(lo, 36), Math.min(hi, 84));
+}
+function ensureRoom(dias){
+  let grew = false;
+  for (const d of dias){
+    if (d < SPAN.dMin){ SPAN.dMin = d; grew = true; }
+    if (d > SPAN.dMax){ SPAN.dMax = d; grew = true; }
+  }
+  if (grew) renderStaff(true);
+  return grew;
+}
+
+function computeLayout(){
+  const { dMin, dMax } = SPAN;
+  const above = Math.max(0, dMax - 38) * HALF + GAP * 1.5;
+  const below = Math.max(0, 18 - dMin) * HALF + GAP * 1.5;
+  const ladder = S.staffMode === 'ladder';
+
+  const top38 = above;
+  const bass26 = ladder ? top38 + 6 * GAP : top38 + 4 * GAP + SEP;
+  const height = bass26 + 4 * GAP + below;
+
+  const braceH = bass26 + 4 * GAP - top38;
+  const braceW = GLYPHS.brace.w / GLYPHS.brace.h * braceH;
+  const x0 = 10 + braceW + 10;
+
+  L = { ladder, top38, bass26, height, dMin, dMax, braceH, braceW,
+        x0, clefX: x0 + 14, noteX: Math.round(VW * 0.56), x1: VW - 26 };
+}
+
+const yTreble = d => L.top38 + (38 - d) * HALF;
+const yBass   = d => L.bass26 + (26 - d) * HALF;
+const staffOf = midi => midi >= 60 ? 'treble' : 'bass';
+const yOf = (d, staff) => L.ladder ? yTreble(d) : (staff === 'treble' ? yTreble(d) : yBass(d));
+
+function ledgersFor(d, staff){
+  const out = [];
+  if (L.ladder){
+    for (let l = 40; l <= d; l += 2) out.push(l);
+    for (let l = 16; l >= d; l -= 2) out.push(l);
+    if (d === 28) out.push(28);
+  } else if (staff === 'treble'){
+    for (let l = 40; l <= d; l += 2) out.push(l);
+    for (let l = 28; l >= d; l -= 2) out.push(l);
+  } else {
+    for (let l = 28; l <= d; l += 2) out.push(l);
+    for (let l = 16; l >= d; l -= 2) out.push(l);
+  }
+  return out;
+}
+
+function glyphPath(name, cls, xLeft, yAnchor, spaces, anchorFrac){
+  const g = GLYPHS[name];
+  const h = spaces * GAP, sc = h / g.h;
+  const tx = xLeft - g.x * sc, ty = (yAnchor - anchorFrac * h) - g.y * sc;
+  return `<path class="${cls}" fill-rule="${g.rule}" transform="translate(${r(tx)} ${r(ty)}) scale(${r(sc,5)})" d="${g.d}"/>`;
+}
+const glyphWidth = (name, spaces) => GLYPHS[name].w * (spaces * GAP / GLYPHS[name].h);
+
+function renderStaff(keepSpan){
+  if (!keepSpan || !SPAN) SPAN = baseSpan();
+  computeLayout();
+  staffEl.setAttribute('viewBox', `0 0 ${VW} ${r(L.height)}`);
+  staffEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  staffEl.style.maxHeight = '400px';
+
+  let s = '';
+  // фигурная скобка
+  s += glyphPath('brace', 'brace', 10, L.top38, L.braceH / GAP, 0);
+  // линейки
+  for (const d of [30,32,34,36,38]) s += line(L.x0, yTreble(d), L.x1);
+  for (const d of [18,20,22,24,26]) s += line(L.x0, L.ladder ? yTreble(d) : yBass(d), L.x1);
+  // в режиме лестницы отмечаем до первой октавы — заодно видно, где кончается
+  // один стан и начинается другой
+  if (L.ladder){
+    const y = yTreble(28);
+    s += `<line class="mid" x1="${r(L.x0)}" y1="${r(y)}" x2="${r(L.x1)}" y2="${r(y)}"/>` +
+         `<text class="midlabel" x="${r(L.x1)}" y="${r(y - 5)}" text-anchor="end">до первой октавы</text>`;
+  }
+  // ключи
+  s += glyphPath(CLEFS.treble.g, 'glyph', L.clefX, yTreble(CLEFS.treble.dia), CLEFS.treble.spaces, CLEFS.treble.anchor);
+  const bassY = L.ladder ? yTreble(CLEFS.bass.dia) : yBass(CLEFS.bass.dia);
+  s += glyphPath(CLEFS.bass.g, 'glyph', L.clefX, bassY, CLEFS.bass.spaces, CLEFS.bass.anchor);
+
+  s += `<g id="notes"></g>`;
+  s += `<rect class="hit" id="hit" x="${L.clefX + 60}" y="0" width="${L.x1 - L.clefX - 60}" height="${r(L.height)}"/>`;
+  staffEl.innerHTML = s;
+}
+const line = (x0, y, x1) => `<line class="rule" x1="${r(x0)}" y1="${r(y)}" x2="${r(x1)}" y2="${r(y)}"/>`;
+
+/* notes: [{midi, dia, alter, staff}] */
+function renderNotes(notes, kind = '', animate = true){
+  if (notes.length) ensureRoom(notes.map(n => n.dia));
+  const g = staffEl.querySelector('#notes');
+  if (!g) return;
+  if (!notes.length){ g.innerHTML = ''; return; }
+
+  const list = notes.slice().sort((a, b) => a.dia - b.dia);
+  const ledgers = new Map();
+  let out = '', prevD = null, prevOff = 0;
+
+  for (const n of list){
+    const staff = n.staff || (L.ladder ? 'treble' : staffOf(n.midi));
+    const y = yOf(n.dia, staff);
+    const off = (prevD !== null && n.dia - prevD === 1 && prevOff === 0) ? 1 : 0;
+    prevD = n.dia; prevOff = off;
+    const cx = L.noteX + off * 1.55 * GAP;
+
+    for (const l of ledgersFor(n.dia, staff)) ledgers.set(staff + ':' + l, yOf(l, staff));
+
+    const head = kind === 'ghost' ? 'ghost' : 'head' + (kind ? ' head--' + kind : '');
+    if (n.alter !== 0 || kind === 'ghost'){
+      const a = ACCS[String(n.alter)];
+      if (a && (n.alter !== 0 || kind === 'ghost')){
+        const w = glyphWidth(a.g, a.spaces);
+        out += glyphPath(a.g, kind === 'ghost' ? 'ghost' : 'glyph',
+                         cx - 0.78 * GAP - w - 4, y, a.spaces, a.anchor);
+      }
+    }
+    // радиусы подобраны так, чтобы наклонённая головка была ровно в один
+    // промежуток высотой и в 1.3 промежутка шириной — как в нотной печати
+    out += `<ellipse class="${head}" data-head="${n.midi}" cx="${r(cx)}" cy="${r(y)}" ` +
+           `rx="${r(0.67 * GAP)}" ry="${r(0.47 * GAP)}" transform="rotate(-20 ${r(cx)} ${r(y)})"/>`;
+  }
+
+  let led = '';
+  const lw = 1.35 * GAP;
+  for (const [, y] of ledgers)
+    led += `<line class="${kind === 'ghost' ? 'ghost-ledger' : 'ledger'}" x1="${r(L.noteX - lw)}" y1="${r(y)}" x2="${r(L.noteX + lw + (prevOff ? 1.55 * GAP : 0))}" y2="${r(y)}"/>`;
+
+  g.innerHTML = led + out;
+  if (animate && !matchMedia('(prefers-reduced-motion: reduce)').matches) g.classList.add('note-anim');
+  else g.classList.remove('note-anim');
+  void g.getBoundingClientRect();
+}
+
+function clearNotes(){
+  const g = staffEl.querySelector('#notes');
+  if (g){ g.innerHTML = ''; g.classList.remove('note-anim'); }
+  linkEl.innerHTML = '';
+}
+
+/* ─── Клавиатура ──────────────────────────────────────────────────────── */
+function keyLabel(midi, mode){
+  const sp = spell(midi, S.accidental);
+  const isC = midi % 12 === 0;
+  if (mode === 'none') return isC ? `<span class="key__lbl">·</span>` : '';
+  if (mode === 'c' && !isC) return '';
+  const base = S.naming === 'ru' ? LET_RU[sp.li] : LET[sp.li];
+  const acc = sp.alter ? `<span class="acc">${accSign(sp.alter)}</span>` : '';
+  const sup = isC ? `<sup>${OCT_SHORT[sp.oct] || ''}</sup>` : '';
+  return `<span class="key__lbl">${base}${acc}${sup}</span>`;
+}
+
+const MIN_KEY = 21;                     // уже этого белая клавиша перестаёт быть клавишей
+
+function buildKeyboard(recenter){
+  const { lo, hi } = range();
+  keyEls.clear();
+  const whites = [];
+  for (let m = lo; m <= hi; m++) if (!isBlack(m)) whites.push(m);
+  const wPct = 100 / whites.length, bw = wPct * 0.62;
+
+  // Ширину клавиши считаем заранее: от неё зависят и высота клавиатуры, и то,
+  // поместятся ли подписи. На 88 клавишах подписи ужимаются до одних до.
+  const avail = Math.max(300, (scrollEl.clientWidth || 900) - 2);
+  const kw = Math.max(MIN_KEY, avail / whites.length);
+  const width = Math.max(avail, whites.length * MIN_KEY);
+  const mode = kw < 19 ? 'none' : kw < 31 ? 'c' : S.labels;
+
+  let html = '';
+  whites.forEach(m => {
+    const sp = spell(m, S.accidental);
+    html += `<button class="key key--w" data-midi="${m}" aria-label="${fullName(sp)}">${keyLabel(m, mode)}</button>`;
+  });
+  for (let m = lo; m <= hi; m++){
+    if (!isBlack(m)) continue;
+    const i = whites.indexOf(m - 1);
+    if (i < 0) continue;
+    const sp = spell(m, S.accidental);
+    const left = (i + 1) * wPct - bw / 2;
+    html += `<button class="key key--b" data-midi="${m}" aria-label="${fullName(sp)}" ` +
+            `style="left:${r(left,4)}%;width:${r(bw,4)}%">${keyLabel(m, kw * 0.62 < 15 ? 'none' : mode)}</button>`;
+  }
+  keysEl.innerHTML = html;
+  keysEl.querySelectorAll('.key').forEach(el => keyEls.set(+el.dataset.midi, el));
+
+  const w = Math.round(width) + 'px';
+  keysEl.style.minWidth = w;
+  keysEl.previousElementSibling.style.minWidth = w;       // фетровая полоса
+  keysEl.style.height = Math.round(Math.min(200, Math.max(116, kw * 6.2))) + 'px';
+
+  const scrolls = width > avail + 2;
+  $('#boardHint').textContent = scrolls ? 'клавиатура прокручивается вбок' : '';
+  if (scrolls && recenter) requestAnimationFrame(() => centerOn(60, false));
+  restoreMarks();
+}
+
+/* Перестройка клавиатуры стирает подсветку — возвращаем её на место */
+function restoreMarks(){
+  if (T.mode === 'free'){ T.shown.forEach(m => markKey(m, 'is-held')); return; }
+  if (!T.target) return;
+  if (T.lock) markKey(T.target.midi, 'is-right');
+  else if (T.mode === 'keyToNote') markKey(T.target.midi, 'is-target');
+}
+
+/* Показать клавишу, если она уехала за край прокрутки */
+function centerOn(midi, smooth = true){
+  const el = keyEls.get(midi);
+  if (!el || !scrollEl) return;
+  const kr = el.getBoundingClientRect(), br = scrollEl.getBoundingClientRect();
+  if (!br.width) return;
+  if (kr.left >= br.left + 6 && kr.right <= br.right - 6) return;
+  const left = scrollEl.scrollLeft + (kr.left - br.left) - (br.width - kr.width) / 2;
+  scrollEl.scrollTo({ left, behavior: smooth && !calm() ? 'smooth' : 'auto' });
+}
+
+const markKey = (midi, cls, ms) => {
+  const el = keyEls.get(midi);
+  if (!el) return;
+  el.classList.add(cls);
+  if (ms) setTimeout(() => el.classList.remove(cls), ms);
+};
+const clearMarks = () => keysEl.querySelectorAll('.key')
+  .forEach(el => el.classList.remove('is-target','is-right','is-wrong','is-hint','is-held'));
+
+/* ─── Отвес ───────────────────────────────────────────────────────────── */
+function drawLink(midis){
+  if (!midis.length){ linkEl.innerHTML = ''; return; }
+  const st = stageEl.getBoundingClientRect(), bd = scrollEl.getBoundingClientRect();
+  linkEl.setAttribute('viewBox', `0 0 ${r(st.width)} ${r(st.height)}`);
+  let out = '';
+  for (const midi of midis){
+    const head = staffEl.querySelector(`[data-head="${midi}"]`), key = keyEls.get(midi);
+    if (!head || !key) continue;
+    const h = head.getBoundingClientRect(), k = key.getBoundingClientRect();
+    const kx = k.left + k.width / 2;
+    if (kx < bd.left - 2 || kx > bd.right + 2) continue;
+    const x1 = h.left + h.width / 2 - st.left, y1 = h.bottom - st.top;
+    const x2 = kx - st.left, y2 = k.top - st.top + (key.classList.contains('key--b') ? 4 : 4);
+    if (y2 <= y1) continue;
+    const dy = Math.max(26, (y2 - y1) * 0.45);
+    out += `<path d="M${r(x1)} ${r(y1)} C ${r(x1)} ${r(y1 + dy)}, ${r(x2)} ${r(y2 - dy)}, ${r(x2)} ${r(y2)}"/>` +
+           `<circle cx="${r(x2)}" cy="${r(y2)}" r="2.6"/>`;
+  }
+  linkEl.innerHTML = out;
+}
+
+/* ─── Звук ────────────────────────────────────────────────────────────── */
+let ac = null;
+function tone(midi){
+  if (!S.sound) return;
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === 'suspended') ac.resume();
+  } catch(e){ return; }
+  const f = freqOf(midi), t = ac.currentTime, vol = (S.volume / 100) * 0.22;
+  const out = ac.createGain();
+  out.gain.setValueAtTime(0.0001, t);
+  out.gain.exponentialRampToValueAtTime(Math.max(0.0002, vol), t + 0.01);
+  out.gain.exponentialRampToValueAtTime(0.0001, t + 2.1);
+  const lp = ac.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.setValueAtTime(Math.min(9000, f * 9), t);
+  lp.frequency.exponentialRampToValueAtTime(Math.max(400, f * 2.2), t + 1.4);
+  lp.connect(out); out.connect(ac.destination);
+  [[1,1],[2,0.36],[3,0.15],[4,0.07],[6,0.03]].forEach(([mult, amp]) => {
+    const o = ac.createOscillator();
+    o.type = mult === 1 ? 'triangle' : 'sine';
+    o.frequency.value = f * mult;
+    const g = ac.createGain();
+    g.gain.value = amp;
+    o.connect(g); g.connect(lp);
+    o.start(t); o.stop(t + 2.2);
+  });
+}
+
+/* ─── Показания и статистика ──────────────────────────────────────────── */
+const ROHINT = {
+  free:      'нажми любую клавишу',
+  noteToKey: 'найди её на клавиатуре',
+  keyToNote: 'поставь её на стан',
+  nameNote:  'выбери название'
+};
+function readout(sp){
+  if (!sp){
+    $('#roName').textContent = T.mode === 'free' ? '—' : '?';
+    $('#roOct').textContent  = ROHINT[T.mode] || '';
+    $('#roSci').textContent  = '';
+    $('#roHz').textContent   = '';
+    return;
+  }
+  $('#roName').textContent = noteName(sp);
+  $('#roOct').textContent  = OCT_GEN[sp.oct] || '';
+  $('#roSci').textContent  = sciName(sp);
+  $('#roHz').textContent   = freqOf(sp.midi).toFixed(1) + ' Гц';
+}
+
+function renderStats(){
+  $('#stStreak').textContent = T.streak;
+  $('#stBest').textContent   = S.best;
+  $('#stAcc').textContent    = T.total ? Math.round(T.right / T.total * 100) + '%' : '—';
+
+  const rows = Object.entries(S.stats)
+    .map(([m, v]) => ({ m:+m, r:v.r|0, w:v.w|0, n:(v.r|0) + (v.w|0) }))
+    .filter(x => x.n >= 2 && x.w > 0)
+    .sort((a, b) => (a.r / a.n) - (b.r / b.n) || b.w - a.w)
+    .slice(0, 6);
+
+  weakEl.innerHTML = rows.length
+    ? rows.map(x => {
+        const sp = spell(x.m, S.accidental);
+        return `<span class="weak__item"><i>${noteName(sp)}</i>${
+          `<span>${Math.round(x.r / x.n * 100)}%</span>`}</span>`;
+      }).join('')
+    : '<p class="weak__empty">Пока пусто — позанимайся немного.</p>';
+}
+
+function record(midi, ok){
+  const k = String(midi);
+  const v = S.stats[k] || (S.stats[k] = { r:0, w:0 });
+  ok ? v.r++ : v.w++;
+  T.total++; if (ok) T.right++;
+  if (ok){ T.streak++; if (T.streak > S.best){ S.best = T.streak; } }
+  else T.streak = 0;
+  save(); renderStats();
+  if (HOOK.onAnswer) HOOK.onAnswer(ok);
+}
+
+/* ─── Реплики ─────────────────────────────────────────────────────────── */
+function cue(text, kind = ''){
+  cueEl.className = 'cue' + (kind ? ' is-' + kind : '');
+  cueEl.innerHTML = text;
+}
+const CUES = {
+  free:      'Нажимай клавиши — увидишь, где эта нота живёт на стане.',
+  noteToKey: 'Найди эту ноту на клавиатуре.',
+  keyToNote: 'Клавиша подсвечена. Поставь её ноту на стан — кликни по нужной линейке или промежутку.',
+  nameNote:  'Как называется эта нота?'
+};
+
+/* ─── Режимы ──────────────────────────────────────────────────────────── */
+function setMode(mode){
+  T.mode = mode; T.target = null; T.wrong = 0; T.placeAlter = 0;
+  T.held.clear(); T.shown.clear();
+  clearMarks(); clearNotes(); answerEl.innerHTML = '';
+  staffEl.classList.toggle('is-clickable', mode === 'keyToNote');
+  document.querySelectorAll('.mode').forEach(b =>
+    b.setAttribute('aria-selected', String(b.dataset.mode === mode)));
+  if (mode === 'free'){ cue(CUES.free); readout(null); }
+  else nextRound();
+}
+
+function pick(){
+  if (HOOK.pick){ const m = HOOK.pick(); if (m != null) return (T.last = m); }
+  const p = pool();
+  let m = p[Math.floor(Math.random() * p.length)];
+  if (p.length > 2){ let guard = 0; while (m === T.last && guard++ < 12) m = p[Math.floor(Math.random() * p.length)]; }
+  T.last = m;
+  return m;
+}
+
+function nextRound(){
+  T.wrong = 0; T.lock = false; T.placeAlter = 0;
+  clearMarks(); clearNotes(); answerEl.innerHTML = '';
+  if (HOOK.beforeRound && HOOK.beforeRound() === false) return;   // урок закончился
+  const sp = spell(pick(), S.accidental);
+  T.target = sp;
+
+  if (T.mode === 'noteToKey'){
+    renderNotes([sp]);
+    cue(CUES.noteToKey);
+    readout(null);
+  } else if (T.mode === 'keyToNote'){
+    markKey(sp.midi, 'is-target');
+    centerOn(sp.midi);
+    cue(CUES.keyToNote);
+    readout(null);
+    buildAccidentalPicker();
+  } else if (T.mode === 'nameNote'){
+    renderNotes([sp]);
+    cue(CUES.nameNote);
+    readout(null);
+    buildNamePicker();
+  }
+}
+
+function buildNamePicker(){
+  const names = S.naming === 'ru' ? LET_RU : LET;
+  const letters = names.map((n, i) => `<button class="chip" data-li="${i}">${n}</button>`).join('');
+  // Если в наборе есть чёрные клавиши, одних букв мало: иначе до и до-диез
+  // засчитывались бы одинаково, и урок закреплял бы ошибку.
+  const signs = T.needAlter
+    ? `<span class="answer__label">Знак</span>` +
+      [[0,'♮'],[1,'♯'],[-1,'♭']].map(([v, t]) =>
+        `<button class="chip chip--sign" data-alter="${v}" aria-pressed="${v === T.placeAlter}">${t}</button>`).join('')
+    : '';
+  answerEl.innerHTML = signs + `<span class="answer__label">Нота</span>` + letters;
+}
+function buildAccidentalPicker(){
+  if (S.blacks === 'white'){ answerEl.innerHTML = ''; return; }
+  const opts = [[0,'♮︎ без знака'], [1,'♯︎ диез'], [-1,'♭︎ бемоль']];
+  answerEl.innerHTML = `<span class="answer__label">Знак</span>` +
+    opts.map(([v, t]) => `<button class="chip chip--wide" data-alter="${v}" aria-pressed="${v === T.placeAlter}">${t}</button>`).join('');
+}
+
+function verdict(ok, sp){
+  if (ok) cue(`<b>Верно.</b> ${fullName(sp)} — <span>${sciName(sp)}</span>`, 'ok');
+  else    cue(`<b>Не эта.</b> Попробуй ещё раз`, 'bad');
+}
+
+/* Ответ клавишей (режимы free и noteToKey) */
+function pressKey(midi, fromHold){
+  const sp = spell(midi, S.accidental);
+  tone(midi);
+
+  if (T.mode === 'free'){
+    if (T.held.size === 0) T.shown.clear();
+    T.held.add(midi); T.shown.add(midi);
+    const notes = [...T.shown].map(m => {
+      const x = spell(m, S.accidental);
+      return { midi:m, dia:x.dia, alter:x.alter, staff: staffOf(m) };
+    });
+    renderNotes(notes);
+    readout(sp);
+    cue(`<b>${noteName(sp)}</b> ${OCT_GEN[sp.oct]} · ${sciName(sp)}`);
+    markKey(midi, 'is-held');
+    centerOn(midi, false);
+    requestAnimationFrame(() => drawLink([...T.shown]));
+    return;
+  }
+
+  if (T.mode === 'noteToKey'){
+    if (T.lock || !T.target) return;
+    const ok = midi === T.target.midi;
+    record(T.target.midi, ok);
+    if (ok){
+      T.lock = true;
+      markKey(midi, 'is-right');
+      centerOn(midi, false);
+      renderNotes([T.target], 'ok', false);
+      verdict(true, T.target);
+      readout(T.target);
+      requestAnimationFrame(() => drawLink([T.target.midi]));
+      setTimeout(nextRound, 1050);
+    } else {
+      markKey(midi, 'is-wrong', 520);
+      T.wrong++;
+      cue(`<b>Мимо.</b> Это ${fullName(sp)}`, 'bad');
+      if (S.hints && T.wrong >= 2){ markKey(T.target.midi, 'is-hint', 1400); centerOn(T.target.midi); }
+    }
+    return;
+  }
+
+  if (T.mode === 'keyToNote' || T.mode === 'nameNote'){
+    // клавиши здесь только звучат — ответ даётся станом или кнопками
+    markKey(midi, 'is-held', 220);
+  }
+}
+function releaseKey(midi){
+  T.held.delete(midi);
+  const el = keyEls.get(midi);
+  if (el && T.mode === 'free' && !T.shown.has(midi)) el.classList.remove('is-held');
+}
+
+/* Ответ названием (режим nameNote) */
+function answerName(li, btn){
+  if (T.lock || !T.target) return;
+  const ok = li === T.target.li && (!T.needAlter || T.placeAlter === T.target.alter);
+  record(T.target.midi, ok);
+  btn.classList.add(ok ? 'is-ok' : 'is-bad');
+  if (ok){
+    T.lock = true;
+    renderNotes([T.target], 'ok', false);
+    verdict(true, T.target);
+    readout(T.target);
+    tone(T.target.midi);
+    markKey(T.target.midi, 'is-right');
+    centerOn(T.target.midi);
+    requestAnimationFrame(() => drawLink([T.target.midi]));
+    setTimeout(nextRound, 1050);
+  } else {
+    T.wrong++;
+    setTimeout(() => btn.classList.remove('is-bad'), 520);
+    cue(`<b>Нет.</b> Посмотри, на какой линейке стоит головка ноты`, 'bad');
+    if (S.hints && T.wrong >= 2){ markKey(T.target.midi, 'is-hint', 1600); centerOn(T.target.midi); }
+  }
+}
+
+/* Ответ постановкой ноты (режим keyToNote) */
+function svgPoint(ev){
+  const ctm = staffEl.getScreenCTM();
+  if (!ctm) return null;
+  const p = staffEl.createSVGPoint();
+  p.x = ev.clientX; p.y = ev.clientY;
+  return p.matrixTransform(ctm.inverse());
+}
+function diaFromY(y){
+  let d, staff = 'treble';
+  if (L.ladder){
+    d = 38 - (y - L.top38) / HALF;
+  } else {
+    const boundary = L.top38 + 4 * GAP + SEP / 2;
+    if (y < boundary) d = 38 - (y - L.top38) / HALF;
+    else { staff = 'bass'; d = 26 - (y - L.bass26) / HALF; }
+  }
+  d = Math.round(d);
+  return { d: Math.max(L.dMin - 3, Math.min(L.dMax + 3, d)), staff };
+}
+function onStaffMove(ev){
+  if (T.mode !== 'keyToNote' || T.lock) return;
+  const p = svgPoint(ev);
+  if (!p || p.x < L.clefX + 60) return;
+  const { d, staff } = diaFromY(p.y);
+  const midi = midiFromDia(d, T.placeAlter);
+  renderNotes([{ midi, dia:d, alter:T.placeAlter, staff }], 'ghost', false);
+}
+function onStaffLeave(){ if (T.mode === 'keyToNote' && !T.lock) clearNotes(); }
+function onStaffClick(ev){
+  if (T.mode !== 'keyToNote' || T.lock || !T.target) return;
+  const p = svgPoint(ev);
+  if (!p || p.x < L.clefX + 60) return;
+  const { d, staff } = diaFromY(p.y);
+  const midi = midiFromDia(d, T.placeAlter);
+  const ok = midi === T.target.midi;
+  record(T.target.midi, ok);
+  renderNotes([{ midi, dia:d, alter:T.placeAlter, staff }], ok ? 'ok' : 'bad');
+  if (ok){
+    T.lock = true;
+    tone(midi);
+    verdict(true, T.target);
+    readout(T.target);
+    markKey(T.target.midi, 'is-right');
+    requestAnimationFrame(() => drawLink([midi]));
+    setTimeout(nextRound, 1150);
+  } else {
+    T.wrong++;
+    const sp = spell(midi, T.placeAlter === -1 ? 'flat' : 'sharp');
+    cue(`<b>Тут ${noteName(sp)} ${OCT_GEN[sp.oct]}.</b> Подсвеченная клавиша — другая`, 'bad');
+    if (S.hints && T.wrong >= 2){
+      const t = T.target;
+      cue(`<b>Подсказка:</b> это ${fullName(t)}`, 'bad');
+    }
+  }
+}
+
+/* ─── События клавиатуры на экране ────────────────────────────────────── */
+keysEl.addEventListener('pointerdown', ev => {
+  const el = ev.target.closest('.key');
+  if (!el) return;
+  ev.preventDefault();
+  el.classList.add('is-down');
+  try { el.setPointerCapture(ev.pointerId); } catch(e){}
+  pressKey(+el.dataset.midi);
+});
+keysEl.addEventListener('pointerup', ev => {
+  const el = ev.target.closest('.key');
+  if (!el) return;
+  el.classList.remove('is-down');
+  releaseKey(+el.dataset.midi);
+});
+keysEl.addEventListener('pointercancel', ev => {
+  const el = ev.target.closest('.key');
+  if (el){ el.classList.remove('is-down'); releaseKey(+el.dataset.midi); }
+});
+keysEl.addEventListener('contextmenu', ev => ev.preventDefault());
+
+staffEl.addEventListener('pointermove', onStaffMove);
+staffEl.addEventListener('pointerleave', onStaffLeave);
+staffEl.addEventListener('click', onStaffClick);
+
+answerEl.addEventListener('click', ev => {
+  const b = ev.target.closest('.chip');
+  if (!b) return;
+  if (b.dataset.li !== undefined) answerName(+b.dataset.li, b);
+  else if (b.dataset.alter !== undefined){
+    T.placeAlter = +b.dataset.alter;
+    answerEl.querySelectorAll('.chip[data-alter]').forEach(c =>
+      c.setAttribute('aria-pressed', String(+c.dataset.alter === T.placeAlter)));
+  }
+});
+
+document.querySelector('#modes').addEventListener('click', ev => {
+  const b = ev.target.closest('.mode');
+  if (b) setMode(b.dataset.mode);
+});
+
+/* ─── Клавиатура компьютера (по физическим кодам — раскладка не важна) ── */
+const CODE_MAP = {
+  KeyZ:0, KeyS:1, KeyX:2, KeyD:3, KeyC:4, KeyV:5, KeyG:6, KeyB:7, KeyH:8, KeyN:9, KeyJ:10, KeyM:11, Comma:12,
+  KeyQ:12, Digit2:13, KeyW:14, Digit3:15, KeyE:16, KeyR:17, Digit5:18, KeyT:19, Digit6:20, KeyY:21, Digit7:22, KeyU:23, KeyI:24
+};
+const downCodes = new Set();
+addEventListener('keydown', ev => {
+  if (ev.target.matches('input, textarea')) return;
+  if (ev.key === 'Escape'){ closeSheets(); return; }
+  if (ev.code === 'Space'){ ev.preventDefault(); if (T.mode !== 'free') repeatPrompt(); return; }
+  if (ev.code === 'ArrowLeft'){ T.kbOct = Math.max(0, T.kbOct - 1); return; }
+  if (ev.code === 'ArrowRight'){ T.kbOct = Math.min(7, T.kbOct + 1); return; }
+  if (/^Digit[1-4]$/.test(ev.code) && ev.shiftKey){
+    setMode(['free','noteToKey','keyToNote','nameNote'][+ev.code.slice(5) - 1]);
+    return;
+  }
+  const off = CODE_MAP[ev.code];
+  if (off === undefined || ev.ctrlKey || ev.metaKey || ev.altKey || downCodes.has(ev.code)) return;
+  const midi = 12 * (T.kbOct + 1) + off;
+  const { lo, hi } = range();
+  if (midi < lo || midi > hi) return;
+  ev.preventDefault();
+  downCodes.add(ev.code);
+  const el = keyEls.get(midi);
+  if (el) el.classList.add('is-down');
+  pressKey(midi);
+});
+addEventListener('keyup', ev => {
+  const off = CODE_MAP[ev.code];
+  if (off === undefined) return;
+  downCodes.delete(ev.code);
+  const midi = 12 * (T.kbOct + 1) + off;
+  const el = keyEls.get(midi);
+  if (el) el.classList.remove('is-down');
+  releaseKey(midi);
+});
+
+function repeatPrompt(){
+  if (!T.target) return;
+  if (T.mode === 'keyToNote') markKey(T.target.midi, 'is-target');
+  else renderNotes([T.target]);
+}
+
+/* ─── Панели настроек и справки ───────────────────────────────────────── */
+const sheets = { settings: $('#sheetSettings'), help: $('#sheetHelp') };
+function openSheet(name){
+  closeSheets();
+  sheets[name].setAttribute('open', '');
+}
+function closeSheets(){ Object.values(sheets).forEach(s => s.removeAttribute('open')); }
+$('#btnSettings').addEventListener('click', () => openSheet('settings'));
+$('#btnHelp').addEventListener('click', () => openSheet('help'));
+document.addEventListener('click', ev => { if (ev.target.closest('[data-close]')) closeSheets(); });
+
+function syncSegments(){
+  document.querySelectorAll('.seg[data-setting]').forEach(seg => {
+    const key = seg.dataset.setting;
+    seg.querySelectorAll('button').forEach(b =>
+      b.setAttribute('aria-pressed', String(String(S[key]) === b.dataset.value)));
+  });
+  $('#setHints').checked = !!S.hints;
+  $('#setSound').checked = !!S.sound;
+  $('#setVolume').value = S.volume;
+  $('#btnSound').setAttribute('aria-pressed', String(!!S.sound));
+  $('#btnSound').textContent = S.sound ? 'Звук' : 'Без звука';
+}
+
+document.querySelectorAll('.seg[data-setting]').forEach(seg => {
+  seg.addEventListener('click', ev => {
+    const b = ev.target.closest('button');
+    if (!b) return;
+    const key = seg.dataset.setting;
+    S[key] = b.dataset.value;
+    save(); syncSegments(); applyAll();
+  });
+});
+$('#setHints').addEventListener('change', e => { S.hints = e.target.checked; save(); });
+$('#setSound').addEventListener('change', e => { S.sound = e.target.checked; save(); syncSegments(); });
+$('#setVolume').addEventListener('input', e => { S.volume = +e.target.value; save(); });
+$('#btnSound').addEventListener('click', () => { S.sound = !S.sound; save(); syncSegments(); });
+$('#btnReset').addEventListener('click', () => {
+  S.stats = {}; S.best = 0; T.streak = T.right = T.total = 0;
+  save(); renderStats();
+});
+
+/* MIDI-клавиатура */
+$('#btnMidi').addEventListener('click', async () => {
+  const st = $('#midiStatus');
+  if (!navigator.requestMIDIAccess){ st.textContent = 'Браузер не поддерживает Web MIDI.'; return; }
+  try {
+    const access = await navigator.requestMIDIAccess();
+    const bind = () => {
+      let n = 0;
+      access.inputs.forEach(input => { n++; input.onmidimessage = onMidi; });
+      st.textContent = n ? `Подключено устройств: ${n}. Играй!` : 'Устройства не найдены.';
+    };
+    access.onstatechange = bind;
+    bind();
+  } catch(e){ st.textContent = 'Не удалось получить доступ к MIDI.'; }
+});
+function onMidi(msg){
+  const [status, note, vel] = msg.data;
+  const cmd = status & 0xf0;
+  if (cmd === 0x90 && vel > 0){
+    const el = keyEls.get(note);
+    if (el) el.classList.add('is-down');
+    pressKey(note);
+  } else if (cmd === 0x80 || (cmd === 0x90 && vel === 0)){
+    const el = keyEls.get(note);
+    if (el) el.classList.remove('is-down');
+    releaseKey(note);
+  }
+}
+
+/* ─── Тема, сборка, ресайз ────────────────────────────────────────────── */
+function applyTheme(){
+  const root = document.documentElement;
+  if (S.theme === 'auto') root.removeAttribute('data-theme');
+  else root.setAttribute('data-theme', S.theme);
+}
+
+function applyAll(){
+  applyTheme();
+  renderStaff();
+  buildKeyboard(true);
+  renderStats();
+  setMode(T.mode);
+}
+
+function brandMark(){
+  const g = GLYPHS.treble, h = 40, sc = h / g.h;
+  const w = g.w * sc;
+  $('#brandMark').innerHTML =
+    `<svg viewBox="0 0 ${r(w + 2)} ${r(h + 2)}" aria-hidden="true">` +
+    `<path fill="currentColor" fill-rule="${g.rule}" transform="translate(${r(1 - g.x * sc)} ${r(1 - g.y * sc)}) scale(${r(sc,5)})" d="${g.d}"/></svg>`;
+}
+
+let raf = 0;
+const relink = () => {
+  cancelAnimationFrame(raf);
+  raf = requestAnimationFrame(() => {
+    if (T.mode === 'free') drawLink([...T.shown]);
+    else if (T.lock && T.target) drawLink([T.target.midi]);
+    else linkEl.innerHTML = '';
+  });
+};
+let rz = 0;
+addEventListener('resize', () => {
+  clearTimeout(rz);
+  rz = setTimeout(() => { buildKeyboard(false); relink(); }, 140);
+});
+scrollEl.addEventListener('scroll', relink);
+new ResizeObserver(relink).observe(stageEl);
+
+function bootCore(){
+  brandMark();
+  syncSegments();
+  applyAll();
+}
+
+/* Курс — лестница уроков поверх ядра.
+   Ядро умеет показывать задание и проверять ответ; курс решает, какую ноту и
+   каким способом спросить, считает жизни, звёзды и опыт. */
+
+const COURSE = [{"title":"Ключ соль","subtitle":"Первая нота на стане — та, вокруг которой завивается скрипичный ключ","lessons":[{"title":"Одна нота","goal":"соль первой октавы","midi":[67],"types":["noteToKey"],"count":8},{"title":"Соль и ми","goal":"две соседние линейки","midi":[64,67],"types":["noteToKey"],"count":10},{"title":"Как их зовут","goal":"те же ноты, но назвать словом","midi":[64,67],"types":["nameNote"],"count":10},{"title":"И си сверху","goal":"три нижние линейки","midi":[64,67,71],"types":["noteToKey","nameNote"],"count":12}]},{"title":"Пять линеек","subtitle":"Ми · соль · си · ре · фа — весь скелет скрипичного ключа","lessons":[{"title":"Ре и фа","goal":"две верхние линейки","midi":[74,77],"types":["noteToKey"],"count":10},{"title":"Все пять","goal":"линейки снизу доверху","midi":[64,67,71,74,77],"types":["noteToKey"],"count":12},{"title":"Назови линейку","goal":"то же на скорость и словами","midi":[64,67,71,74,77],"types":["nameNote"],"count":10},{"title":"Повторение","goal":"закрепить пять линеек","midi":[64,67,71,74,77],"types":["noteToKey","nameNote"],"count":12}]},{"title":"Промежутки","subtitle":"Фа · ля · до · ми — то, что живёт между линейками","lessons":[{"title":"Фа и ля","goal":"два нижних промежутка","midi":[65,69],"types":["noteToKey"],"count":10},{"title":"До и ми","goal":"два верхних промежутка","midi":[72,76],"types":["noteToKey"],"count":10},{"title":"Все четыре","goal":"промежутки подряд","midi":[65,69,72,76],"types":["noteToKey","nameNote"],"count":12},{"title":"Вперемешку","goal":"линейки и промежутки вместе","midi":[64,65,67,69,71,72,74,76,77],"types":["noteToKey","nameNote"],"count":12}]},{"title":"Ставим ноту сами","subtitle":"Обратная задача: клавиша есть, а ноту на стан ставишь ты","lessons":[{"title":"Первый клик","goal":"поставить ноту на линейку","midi":[64,67,71],"types":["keyToNote"],"count":10},{"title":"И в промежуток","goal":"линейки и промежутки","midi":[64,65,67,69,71,72],"types":["keyToNote"],"count":10},{"title":"Все три способа","goal":"скрипичный ключ со всех сторон","midi":[64,65,67,69,71,72,74,76,77],"types":["noteToKey","keyToNote","nameNote"],"count":12}]},{"title":"До первой октавы","subtitle":"Нота на короткой добавочной линейке между станами — главный ориентир","lessons":[{"title":"Одна нота","goal":"до первой октавы","midi":[60],"types":["noteToKey"],"count":8},{"title":"До, ре, ми","goal":"низ скрипичного ключа","midi":[60,62,64],"types":["noteToKey"],"count":10},{"title":"Снизу доверху","goal":"от до первой до фа второй","midi":[60,62,64,65,67,69,71,72],"types":["noteToKey","nameNote"],"count":12}]},{"title":"Ключ фа","subtitle":"Новый ключ — новый старт: якорь и пять линеек басового","lessons":[{"title":"Якорь фа","goal":"фа малой октавы между двумя точками","midi":[53],"types":["noteToKey"],"count":8},{"title":"Фа, ля, ре","goal":"линейки вокруг якоря","midi":[50,53,57],"types":["noteToKey"],"count":10},{"title":"Все пять","goal":"соль · си · ре · фа · ля","midi":[43,47,50,53,57],"types":["noteToKey"],"count":12},{"title":"Назови линейку","goal":"линейки басового словами","midi":[43,47,50,53,57],"types":["nameNote"],"count":10}]},{"title":"Басовые промежутки","subtitle":"Ля · до · ми · соль и весь басовый ключ целиком","lessons":[{"title":"Ля и до","goal":"два нижних промежутка","midi":[45,48],"types":["noteToKey"],"count":10},{"title":"Ми и соль","goal":"два верхних промежутка","midi":[52,55],"types":["noteToKey"],"count":10},{"title":"Басовый целиком","goal":"линейки и промежутки вместе","midi":[43,45,47,48,50,52,53,55,57],"types":["noteToKey","nameNote"],"count":12},{"title":"Ставим в басовом","goal":"обратная задача в новом ключе","midi":[43,45,47,48,50,52,53,55,57],"types":["keyToNote"],"count":10}]},{"title":"Два стана","subtitle":"Переход через до и три разных до, которые все зовутся одинаково","lessons":[{"title":"Через до","goal":"стык басового и скрипичного","midi":[55,57,59,60,62,64],"types":["noteToKey"],"count":12},{"title":"Три разных до","goal":"малой, первой и второй октавы","midi":[48,60,72],"types":["noteToKey"],"count":10},{"title":"Прыжки","goal":"ключи чередуются без предупреждения","midi":[43,48,52,55,60,64,67,71,72],"types":["noteToKey","keyToNote"],"count":12}]},{"title":"Добавочные линейки","subtitle":"Что происходит выше и ниже станов","lessons":[{"title":"Ниже басового","goal":"до, ре, ми, фа большой октавы","midi":[36,38,40,41],"types":["noteToKey"],"count":10},{"title":"Выше скрипичного","goal":"ля, си второй и до, ре третьей","midi":[81,83,84,86],"types":["noteToKey"],"count":10},{"title":"Оба края","goal":"низ и верх вперемешку","midi":[36,38,40,41,81,83,84,86],"types":["noteToKey","keyToNote"],"count":12}]},{"title":"Диезы и бемоли","subtitle":"Чёрные клавиши и знак, который стоит перед нотой","lessons":[{"title":"Первые диезы","goal":"до-диез и фа-диез рядом с белыми","midi":[60,61,65,66],"types":["noteToKey"],"count":10,"acc":"sharp"},{"title":"Все диезы","goal":"пять чёрных клавиш октавы","midi":[61,63,66,68,70],"types":["noteToKey","nameNote"],"count":12,"acc":"sharp"},{"title":"Те же, но бемоли","goal":"одни клавиши, другая запись","midi":[61,63,66,68,70],"types":["noteToKey","nameNote"],"count":12,"acc":"flat"},{"title":"Вся октава","goal":"белые и чёрные подряд","midi":[60,61,62,63,64,65,66,67,68,69,70,71],"types":["noteToKey","nameNote"],"count":12,"acc":"sharp"}]},{"title":"Октавы","subtitle":"Одна и та же нота на разных этажах клавиатуры","lessons":[{"title":"Соль везде","goal":"соль большой, малой, первой и второй","midi":[43,55,67,79],"types":["noteToKey"],"count":10},{"title":"Ре и ля везде","goal":"две ноты по всем этажам","midi":[45,50,57,62,69,74,81],"types":["noteToKey"],"count":12},{"title":"Выпускной","goal":"всё, что прошли, вперемешку","midi":[43,45,47,48,50,52,53,55,57,60,62,64,65,67,69,71,72,74,76,77],"types":["noteToKey","keyToNote"],"count":14,"exam":true}]}];
+
+/* ─── Состояние ───────────────────────────────────────────────────────────── */
+S.course = Object.assign(
+  { xp:0, stars:{}, day:null, days:0, today:0, screen:'course' },
+  S.course || {}
+);
+const GOAL = 40;                       // опыта в день
+
+const LS = {                           // текущий урок
+  on:false, unit:0, idx:0, lesson:null, title:'',
+  queue:[], pos:0, hearts:3, mistakes:0, review:false, accBack:null
+};
+
+const courseEl = $('#courseScreen'), pathEl = $('#path'),
+      modesEl  = $('#modes'), barEl = $('#lessonBar'),
+      resultEl = $('#result');
+
+const lid = (u, i) => `${u}.${i}`;
+const starsOf = id => S.course.stars[id] | 0;
+const isDone  = (u, i) => starsOf(lid(u, i)) > 0;
+
+/* Урок открыт, если пройден предыдущий. Первый открыт всегда. */
+function isOpen(u, i){
+  if (u === 0 && i === 0) return true;
+  if (i > 0) return isDone(u, i - 1);
+  const prev = COURSE[u - 1];
+  return prev ? isDone(u - 1, prev.lessons.length - 1) : false;
+}
+function nextOpen(){
+  for (let u = 0; u < COURSE.length; u++)
+    for (let i = 0; i < COURSE[u].lessons.length; i++)
+      if (!isDone(u, i)) return { u, i };
+  return null;
+}
+
+/* ─── Дни подряд ─────────────────────────────────────────────────────────── */
+const dayKey = d => `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+function touchDay(){
+  const now = new Date(), t = dayKey(now);
+  if (S.course.day === t) return;
+  const y = new Date(now); y.setDate(y.getDate() - 1);
+  S.course.days = S.course.day === dayKey(y) ? S.course.days + 1 : 1;
+  S.course.day = t;
+  S.course.today = 0;
+}
+
+/* ─── Экраны ─────────────────────────────────────────────────────────────── */
+function setScreen(name){
+  S.course.screen = name; save();
+  document.querySelectorAll('.screen-tab').forEach(b =>
+    b.setAttribute('aria-selected', String(b.dataset.screen === name)));
+  const course = name === 'course';
+  courseEl.hidden = !course;
+  stageEl.hidden = course;
+  modesEl.hidden = course || LS.on;
+  barEl.hidden = course || !LS.on;
+  if (course){ renderTop(); renderPath(); }
+  else if (!LS.on){ relink(); }
+}
+
+/* ─── Верхняя строка курса ───────────────────────────────────────────────── */
+function renderTop(){
+  const c = S.course;
+  const now = dayKey(new Date());
+  const todayXp = c.day === now ? c.today : 0;
+  $('#cXp').textContent = c.xp;
+  $('#cDays').textContent = c.day === now || c.days ? c.days : 0;
+  $('#cGoal').textContent = todayXp;
+  $('#cGoalMax').textContent = GOAL;
+  const len = 2 * Math.PI * 16;
+  $('#cRing').style.strokeDasharray = len;
+  $('#cRing').style.strokeDashoffset = len * (1 - Math.min(1, todayXp / GOAL));
+}
+
+/* ─── Лестница ───────────────────────────────────────────────────────────── */
+const LOCK = `<svg class="node__lock" viewBox="0 0 12 12" aria-hidden="true">
+<path d="M3.2 5.2V3.7a2.8 2.8 0 0 1 5.6 0v1.5" fill="none" stroke="currentColor" stroke-width="1.3"/>
+<rect x="2.1" y="5" width="7.8" height="5.8" rx="1.4" fill="currentColor"/></svg>`;
+
+function renderPath(){
+  const now = nextOpen();
+  pathEl.innerHTML = COURSE.map((unit, u) => {
+    const open = unit.lessons.some((_, i) => isOpen(u, i)) || unit.lessons.some((_, i) => isDone(u, i));
+    const nodes = unit.lessons.map((les, i) => {
+      const id = lid(u, i), st = starsOf(id), done = st > 0, can = isOpen(u, i);
+      const here = now && now.u === u && now.i === i;
+      const cls = ['node', done && 'is-done', here && 'is-now'].filter(Boolean).join(' ');
+      const stars = [1,2,3].map(n => `<i class="${n <= st ? 'on' : ''}"></i>`).join('');
+      return `<button class="${cls}" data-u="${u}" data-i="${i}" ${can ? '' : 'disabled'}
+        title="${les.title} — ${les.goal}" aria-label="Урок ${i + 1}: ${les.title}">
+        <span class="node__n">${can || done ? i + 1 : LOCK}</span>
+        <span class="node__stars">${stars}</span></button>`;
+    }).join('');
+    return `<section class="unit${open ? '' : ' is-locked'}">
+      <div>
+        <span class="unit__eyebrow">Юнит ${u + 1}</span>
+        <h2 class="unit__title">${unit.title}</h2>
+        <p class="unit__sub">${unit.subtitle}</p>
+      </div>
+      <div class="unit__nodes">${nodes}</div>
+    </section>`;
+  }).join('');
+}
+
+pathEl.addEventListener('click', ev => {
+  const b = ev.target.closest('.node');
+  if (b && !b.disabled) startLesson(+b.dataset.u, +b.dataset.i);
+});
+
+/* ─── Сборка заданий ─────────────────────────────────────────────────────── */
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+/* Ноты, которые ученик уже проходил — из них берём вкрапления на повторение */
+function learned(){
+  const set = new Set();
+  COURSE.forEach((u, ui) => u.lessons.forEach((l, li) => {
+    if (isDone(ui, li)) l.midi.forEach(m => set.add(m));
+  }));
+  return [...set];
+}
+function weakest(from, n){
+  return from
+    .map(m => { const v = S.stats[m] || { r:0, w:0 }; const t = v.r + v.w; return { m, acc: t ? v.r / t : 1, t }; })
+    .filter(x => x.t >= 2 && x.acc < 0.9)
+    .sort((a, b) => a.acc - b.acc)
+    .slice(0, n)
+    .map(x => x.m);
+}
+
+function buildQueue(les){
+  const types = les.types && les.types.length ? les.types.slice() : ['noteToKey'];
+  const q = [];
+  let bag = shuffle(les.midi.slice());
+  for (let i = 0; i < les.count; i++){
+    if (!bag.length) bag = shuffle(les.midi.slice());
+    q.push({ midi: bag.shift(), type: types[i % types.length] });
+  }
+  // повторение: пара заданий на самые хромающие ноты из уже пройденного
+  const old = learned().filter(m => !les.midi.includes(m));
+  weakest(old, 2).forEach(m => q.splice(Math.floor(q.length / 2) + q.length % 2, 0, { midi:m, type: types[0], again:true }));
+  // не даём одной и той же ноте идти подряд
+  for (let i = 1; i < q.length; i++)
+    if (q[i].midi === q[i - 1].midi && i + 1 < q.length) [q[i], q[i + 1]] = [q[i + 1], q[i]];
+  return q;
+}
+
+/* Клавиатуру сужаем до октав вокруг нот урока */
+function spanFor(midis){
+  let lo = Math.floor(Math.min(...midis) / 12) * 12;
+  let hi = Math.ceil((Math.max(...midis) + 1) / 12) * 12;
+  while (hi - lo < 24){ if (lo > 24) lo -= 12; else hi += 12; }
+  return { lo: Math.max(21, lo), hi: Math.min(108, hi) };
+}
+
+/* ─── Ход урока ──────────────────────────────────────────────────────────── */
+function startLesson(u, i, review){
+  const les = review || COURSE[u].lessons[i];
+  LS.on = true; LS.unit = u; LS.idx = i; LS.lesson = les; LS.review = !!review;
+  LS.queue = review ? review.queue : buildQueue(les);
+  LS.pos = 0; LS.hearts = 3; LS.mistakes = 0;
+  LS.title = review ? les.title : `${COURSE[u].title} · ${les.title}`;
+
+  LS.accBack = null;
+  if (les.acc && les.acc !== S.accidental){ LS.accBack = S.accidental; S.accidental = les.acc; }
+
+  RANGE_FIX = spanFor(LS.queue.map(t => t.midi));
+  renderStaff(); buildKeyboard(true);
+
+  resultEl.hidden = true;
+  setScreen('practice');
+  modesEl.hidden = true; barEl.hidden = false;
+  // диапазоном во время урока распоряжается сам урок
+  document.querySelector('.board__bar').hidden = true;
+  // урок — часть курса, поэтому подсвечен «Курс»: по нему и выходят обратно
+  document.querySelectorAll('.screen-tab').forEach(b =>
+    b.setAttribute('aria-selected', String(b.dataset.screen === 'course')));
+  $('#lessonTitle').textContent = LS.title;
+  renderHearts(); updateBar();
+
+  T.streak = 0; T.right = 0; T.total = 0;
+  nextRound();
+}
+
+function quitLesson(toCourse = true){
+  LS.on = false;
+  if (LS.accBack){ S.accidental = LS.accBack; LS.accBack = null; }
+  RANGE_FIX = null;
+  resultEl.hidden = true;
+  barEl.hidden = true;
+  document.querySelector('.board__bar').hidden = false;
+  renderStaff(); buildKeyboard(true);
+  save();
+  if (toCourse) setScreen('course');
+  else { modesEl.hidden = false; setMode('free'); }
+}
+$('#lessonQuit').addEventListener('click', () => quitLesson(true));
+
+function renderHearts(){
+  $('#hearts').innerHTML = [0,1,2].map(n => `<svg viewBox="0 0 20 18" aria-hidden="true">
+<path class="${n < LS.hearts ? 'heart' : 'heart heart--out'}"
+ d="M10 16.6C10 16.6 1.6 11 1.6 5.8 1.6 3.2 3.6 1.2 6.1 1.2 7.9 1.2 9.4 2.3 10 3.5c.6-1.2 2.1-2.3 3.9-2.3 2.5 0 4.5 2 4.5 4.6 0 5.2-8.4 10.8-8.4 10.8z"/></svg>`).join('');
+  $('#hearts').setAttribute('aria-label', `Жизней: ${LS.hearts}`);
+}
+function updateBar(){
+  const total = LS.queue.length;
+  $('#lessonProgress').style.width = Math.round(LS.pos / total * 100) + '%';
+  $('#lessonTitle').textContent = `${LS.title} — задание ${Math.min(LS.pos + 1, total)} из ${total}`;
+}
+
+/* Ядро спрашивает: какую ноту показать и каким способом */
+HOOK.pick = () => LS.on ? LS.queue[LS.pos].midi : null;
+
+HOOK.beforeRound = () => {
+  T.needAlter = LS.on ? LS.queue.some(t => isBlack(t.midi)) : S.blacks === 'all';
+  if (!LS.on) return true;
+  if (LS.pos >= LS.queue.length){ finishLesson(); return false; }
+  T.mode = LS.queue[LS.pos].type;
+  staffEl.classList.toggle('is-clickable', T.mode === 'keyToNote');
+  updateBar();
+  return true;
+};
+
+HOOK.onAnswer = ok => {
+  if (!LS.on) return;
+  const item = LS.queue[LS.pos];
+  if (ok){
+    LS.pos++;
+    updateBar();
+    return;
+  }
+  LS.mistakes++;
+  if (item && !item.retried){                 // промахнулся — вернём эту ноту в конец
+    item.retried = true;
+    LS.queue.push({ midi:item.midi, type:item.type, again:true });
+    updateBar();
+  }
+  LS.hearts--;
+  renderHearts();
+  if (LS.hearts <= 0){ T.lock = true; setTimeout(failLesson, 700); }
+};
+
+/* ─── Итог ───────────────────────────────────────────────────────────────── */
+function finishLesson(){
+  const st = LS.mistakes === 0 ? 3 : LS.mistakes <= 2 ? 2 : 1;
+  let xp = 10 + (st === 3 ? 5 : 0);
+  if (LS.review) xp = 8;
+
+  touchDay();
+  S.course.xp += xp;
+  S.course.today += xp;
+  if (!LS.review){
+    const id = lid(LS.unit, LS.idx);
+    S.course.stars[id] = Math.max(starsOf(id), st);
+  }
+  save();
+
+  showResult({
+    stars: st,
+    title: st === 3 ? 'Без единой ошибки' : st === 2 ? 'Урок пройден' : 'Зачтено',
+    text: st === 3 ? 'Эти ноты можно считать выученными.'
+        : st === 2 ? 'Почти чисто. Ещё заход — и будет три звезды.'
+        : 'Пройдено, но шатко. Стоит повторить.',
+    rows: [
+      ['Заданий', LS.queue.length],
+      ['Ошибок', LS.mistakes],
+      ['Опыт', '+' + xp],
+    ],
+    done: true
+  });
+}
+
+function failLesson(){
+  showResult({
+    stars: 0,
+    title: 'Жизни кончились',
+    text: 'Это не провал, а замер. Пройди урок ещё раз — станет легче.',
+    rows: [
+      ['Пройдено', `${LS.pos} из ${LS.queue.length}`],
+      ['Ошибок', LS.mistakes],
+    ],
+    done: false
+  });
+}
+
+function showResult({ stars, title, text, rows, done }){
+  $('#resStars').innerHTML = [1,2,3].map(n => `<i class="${n <= stars ? 'on' : ''}"></i>`).join('');
+  $('#resTitle').textContent = title;
+  $('#resText').textContent = text;
+  $('#resRows').innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('');
+  $('#resNext').textContent = done ? 'Дальше' : 'К списку уроков';
+  resultEl.hidden = false;
+  (done ? $('#resNext') : $('#resAgain')).focus();
+}
+
+$('#resAgain').addEventListener('click', () => {
+  const { unit, idx, review, lesson } = LS;
+  resultEl.hidden = true;
+  if (review) startReview();
+  else startLesson(unit, idx);
+});
+$('#resNext').addEventListener('click', () => quitLesson(true));
+
+/* ─── Разминка на трудных нотах ──────────────────────────────────────────── */
+function startReview(){
+  const pool = learned();
+  if (!pool.length){
+    cue('<b>Сначала пройди хотя бы один урок.</b> Тогда будет что повторять.');
+    return;
+  }
+  const weak = weakest(pool, 8);
+  const notes = (weak.length >= 4 ? weak : shuffle(pool.slice()).slice(0, 8));
+  const queue = shuffle(notes.slice()).map((m, i) => ({ midi:m, type: i % 2 ? 'nameNote' : 'noteToKey' }));
+  while (queue.length < 10) queue.push({ midi: notes[queue.length % notes.length], type:'noteToKey' });
+  startLesson(0, 0, { title:'Разминка', goal:'повторение трудных нот', midi:notes, types:['noteToKey'], count:queue.length, queue });
+}
+$('#cReview').addEventListener('click', startReview);
+
+/* ─── Запуск ─────────────────────────────────────────────────────────────── */
+document.querySelector('#screens').addEventListener('click', ev => {
+  const b = ev.target.closest('.screen-tab');
+  if (!b) return;
+  if (LS.on) quitLesson(false);
+  setScreen(b.dataset.screen);
+});
+
+function boot(){
+  bootCore();
+  const now = new Date();
+  if (S.course.day && S.course.day !== dayKey(now)){
+    const y = new Date(now); y.setDate(y.getDate() - 1);
+    if (S.course.day !== dayKey(y)) S.course.days = 0;   // серия прервалась
+    S.course.today = 0;
+  }
+  setScreen(S.course.screen === 'practice' ? 'practice' : 'course');
+}
+
+boot();
+})();
+</script>
+</body>
+</html>
