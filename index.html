@@ -185,6 +185,10 @@ body{
 .staff .head{ fill:var(--ink) }
 .staff .head--ok{ fill:var(--ok) }
 .staff .head--bad{ fill:var(--bad) }
+.staff .glyph--ok{ fill:var(--ok) }
+.staff .glyph--bad{ fill:var(--bad) }
+.staff .ledger--ok{ stroke:var(--ok) }
+.staff .ledger--bad{ stroke:var(--bad) }
 .staff .ghost{ fill:var(--brass); opacity:.32 }
 .staff .ghost-ledger{ stroke:var(--brass); stroke-width:1.9; opacity:.4; stroke-linecap:round }
 .staff .hit{ fill:transparent }
@@ -371,6 +375,8 @@ body{
   stroke-linecap:round; stroke-dasharray:1 0;
 }
 .link circle{ fill:var(--brass-line) }
+.link path.bad{ stroke:var(--bad); stroke-dasharray:5 4 }
+.link circle.bad{ fill:var(--bad) }
 @keyframes draw{ from{ stroke-dashoffset:var(--len) } to{ stroke-dashoffset:0 } }
 
 /* ─── Выдвижные панели ───────────────────────────────────────────────────── */
@@ -900,7 +906,7 @@ const save = () => { try { localStorage.setItem(STORE, JSON.stringify(S)); } cat
 const T = {                       // состояние сессии
   mode:'free', target:null, wrong:0, streak:0, right:0, total:0,
   held:new Set(), shown:new Set(), placeAlter:0, lock:false, last:null, kbOct:3,
-  needAlter:false
+  needAlter:false, miss:null
 };
 
 const RANGES = { '2':{lo:48,hi:72}, '4':{lo:36,hi:84}, '88':{lo:21,hi:108} };
@@ -1072,33 +1078,49 @@ function renderNotes(notes, kind = '', animate = true){
   let out = '', prevD = null, prevOff = 0;
 
   for (const n of list){
+    // у каждой ноты может быть своё состояние: заданная — чернилами,
+    // ошибочная — красным, и обе стоят на стане одновременно
+    const k = n.kind || kind;
+    const ghost = k === 'ghost';
     const staff = n.staff || (L.ladder ? 'treble' : staffOf(n.midi));
     const y = yOf(n.dia, staff);
-    const off = (prevD !== null && n.dia - prevD === 1 && prevOff === 0) ? 1 : 0;
+    // сдвигаем вбок и соседнюю ступень, и совпавшую — иначе головки сольются
+    const off = (prevD !== null && n.dia - prevD <= 1 && prevOff === 0) ? 1 : 0;
     prevD = n.dia; prevOff = off;
     const cx = L.noteX + off * 1.55 * GAP;
 
-    for (const l of ledgersFor(n.dia, staff)) ledgers.set(staff + ':' + l, yOf(l, staff));
+    for (const l of ledgersFor(n.dia, staff)){
+      const key = `${staff}:${l}`, prev = ledgers.get(key);
+      if (prev){
+        // линейку делят обе ноты — красить её в цвет одной нечестно
+        if (prev.k !== k) prev.k = '';
+        prev.a = Math.min(prev.a, off);
+        prev.b = Math.max(prev.b, off);
+      } else ledgers.set(key, { y: yOf(l, staff), k, a: off, b: off });
+    }
 
-    const head = kind === 'ghost' ? 'ghost' : 'head' + (kind ? ' head--' + kind : '');
-    if (n.alter !== 0 || kind === 'ghost'){
+    if (n.alter !== 0 || ghost){
       const a = ACCS[String(n.alter)];
-      if (a && (n.alter !== 0 || kind === 'ghost')){
+      if (a){
         const w = glyphWidth(a.g, a.spaces);
-        out += glyphPath(a.g, kind === 'ghost' ? 'ghost' : 'glyph',
+        out += glyphPath(a.g, ghost ? 'ghost' : 'glyph' + (k ? ' glyph--' + k : ''),
                          cx - 0.78 * GAP - w - 4, y, a.spaces, a.anchor);
       }
     }
     // радиусы подобраны так, чтобы наклонённая головка была ровно в один
     // промежуток высотой и в 1.3 промежутка шириной — как в нотной печати
+    const head = ghost ? 'ghost' : 'head' + (k ? ' head--' + k : '');
     out += `<ellipse class="${head}" data-head="${n.midi}" cx="${r(cx)}" cy="${r(y)}" ` +
            `rx="${r(0.67 * GAP)}" ry="${r(0.47 * GAP)}" transform="rotate(-20 ${r(cx)} ${r(y)})"/>`;
   }
 
   let led = '';
   const lw = 1.35 * GAP;
-  for (const [, y] of ledgers)
-    led += `<line class="${kind === 'ghost' ? 'ghost-ledger' : 'ledger'}" x1="${r(L.noteX - lw)}" y1="${r(y)}" x2="${r(L.noteX + lw + (prevOff ? 1.55 * GAP : 0))}" y2="${r(y)}"/>`;
+  for (const [, l] of ledgers){
+    const cls = l.k === 'ghost' ? 'ghost-ledger' : 'ledger' + (l.k ? ' ledger--' + l.k : '');
+    led += `<line class="${cls}" x1="${r(L.noteX - lw + l.a * 1.55 * GAP)}" y1="${r(l.y)}" ` +
+           `x2="${r(L.noteX + lw + l.b * 1.55 * GAP)}" y2="${r(l.y)}"/>`;
+  }
 
   g.innerHTML = led + out;
   if (animate && !matchMedia('(prefers-reduced-motion: reduce)').matches) g.classList.add('note-anim');
@@ -1202,7 +1224,9 @@ function drawLink(midis){
   const st = stageEl.getBoundingClientRect(), bd = scrollEl.getBoundingClientRect();
   linkEl.setAttribute('viewBox', `0 0 ${r(st.width)} ${r(st.height)}`);
   let out = '';
-  for (const midi of midis){
+  for (const item of midis){
+    const midi = typeof item === 'number' ? item : item.midi;
+    const cls = typeof item === 'object' && item.kind ? ' class="' + item.kind + '"' : '';
     const head = staffEl.querySelector(`[data-head="${midi}"]`), key = keyEls.get(midi);
     if (!head || !key) continue;
     const h = head.getBoundingClientRect(), k = key.getBoundingClientRect();
@@ -1212,8 +1236,8 @@ function drawLink(midis){
     const x2 = kx - st.left, y2 = k.top - st.top + (key.classList.contains('key--b') ? 4 : 4);
     if (y2 <= y1) continue;
     const dy = Math.max(26, (y2 - y1) * 0.45);
-    out += `<path d="M${r(x1)} ${r(y1)} C ${r(x1)} ${r(y1 + dy)}, ${r(x2)} ${r(y2 - dy)}, ${r(x2)} ${r(y2)}"/>` +
-           `<circle cx="${r(x2)}" cy="${r(y2)}" r="2.6"/>`;
+    out += `<path${cls} d="M${r(x1)} ${r(y1)} C ${r(x1)} ${r(y1 + dy)}, ${r(x2)} ${r(y2 - dy)}, ${r(x2)} ${r(y2)}"/>` +
+           `<circle${cls} cx="${r(x2)}" cy="${r(y2)}" r="2.6"/>`;
   }
   linkEl.innerHTML = out;
 }
@@ -1313,7 +1337,7 @@ const CUES = {
 
 /* ─── Режимы ──────────────────────────────────────────────────────────── */
 function setMode(mode){
-  T.mode = mode; T.target = null; T.wrong = 0; T.placeAlter = 0;
+  T.mode = mode; T.target = null; T.wrong = 0; T.placeAlter = 0; T.miss = null;
   T.held.clear(); T.shown.clear();
   clearMarks(); clearNotes(); answerEl.innerHTML = '';
   staffEl.classList.toggle('is-clickable', mode === 'keyToNote');
@@ -1333,8 +1357,11 @@ function pick(){
 }
 
 function nextRound(){
-  T.wrong = 0; T.lock = false; T.placeAlter = 0;
+  T.wrong = 0; T.lock = false; T.placeAlter = 0; T.miss = null;
   clearMarks(); clearNotes(); answerEl.innerHTML = '';
+  // после далёкого промаха стан мог раздвинуться — возвращаем обычный размер
+  const b = baseSpan();
+  if (!SPAN || SPAN.dMin !== b.dMin || SPAN.dMax !== b.dMax) renderStaff();
   if (HOOK.beforeRound && HOOK.beforeRound() === false) return;   // урок закончился
   const sp = spell(pick(), S.accidental);
   T.target = sp;
@@ -1381,6 +1408,15 @@ function verdict(ok, sp){
   else    cue(`<b>Не эта.</b> Попробуй ещё раз`, 'bad');
 }
 
+/* Промах не стираем, а показываем: заданная нота остаётся чернилами, а рядом
+   встаёт красная — та, куда ученик попал. Видно не «мимо», а насколько мимо. */
+function showMiss(){
+  const notes = [T.target];
+  if (T.miss) notes.push(Object.assign({}, T.miss, { kind:'bad' }));
+  renderNotes(notes, '', false);
+  if (T.miss) requestAnimationFrame(() => drawLink([{ midi:T.miss.midi, kind:'bad' }]));
+}
+
 /* Ответ клавишей (режимы free и noteToKey) */
 function pressKey(midi, fromHold){
   const sp = spell(midi, S.accidental);
@@ -1418,7 +1454,9 @@ function pressKey(midi, fromHold){
     } else {
       markKey(midi, 'is-wrong', 520);
       T.wrong++;
-      cue(`<b>Мимо.</b> Это ${fullName(sp)}`, 'bad');
+      T.miss = sp;
+      showMiss();
+      cue(`<b>Мимо.</b> Красная — ${fullName(sp)}, её ты и нажал`, 'bad');
       if (S.hints && T.wrong >= 2){ markKey(T.target.midi, 'is-hint', 1400); centerOn(T.target.midi); }
     }
     return;
@@ -1454,7 +1492,12 @@ function answerName(li, btn){
   } else {
     T.wrong++;
     setTimeout(() => btn.classList.remove('is-bad'), 520);
-    cue(`<b>Нет.</b> Посмотри, на какой линейке стоит головка ноты`, 'bad');
+    // ставим на стан ту ноту, которую он назвал — в ближайшей к заданию октаве
+    const dia = li + 7 * Math.round((T.target.dia - li) / 7);
+    const alter = T.needAlter ? T.placeAlter : 0;
+    T.miss = { midi: midiFromDia(dia, alter), dia, alter, li, oct: Math.floor(dia / 7) };
+    showMiss();
+    cue(`<b>Нет.</b> Красная — ${noteName(T.miss)}, как ты назвал. Чёрная стоит на другой ступени`, 'bad');
     if (S.hints && T.wrong >= 2){ markKey(T.target.midi, 'is-hint', 1600); centerOn(T.target.midi); }
   }
 }
@@ -1700,6 +1743,7 @@ const relink = () => {
   raf = requestAnimationFrame(() => {
     if (T.mode === 'free') drawLink([...T.shown]);
     else if (T.lock && T.target) drawLink([T.target.midi]);
+    else if (T.miss) drawLink([{ midi:T.miss.midi, kind:'bad' }]);
     else linkEl.innerHTML = '';
   });
 };

@@ -175,6 +175,10 @@ body{
 .staff .head{ fill:var(--ink) }
 .staff .head--ok{ fill:var(--ok) }
 .staff .head--bad{ fill:var(--bad) }
+.staff .glyph--ok{ fill:var(--ok) }
+.staff .glyph--bad{ fill:var(--bad) }
+.staff .ledger--ok{ stroke:var(--ok) }
+.staff .ledger--bad{ stroke:var(--bad) }
 .staff .ghost{ fill:var(--brass); opacity:.32 }
 .staff .ghost-ledger{ stroke:var(--brass); stroke-width:1.9; opacity:.4; stroke-linecap:round }
 .staff .hit{ fill:transparent }
@@ -361,6 +365,8 @@ body{
   stroke-linecap:round; stroke-dasharray:1 0;
 }
 .link circle{ fill:var(--brass-line) }
+.link path.bad{ stroke:var(--bad); stroke-dasharray:5 4 }
+.link circle.bad{ fill:var(--bad) }
 @keyframes draw{ from{ stroke-dashoffset:var(--len) } to{ stroke-dashoffset:0 } }
 
 /* ─── Выдвижные панели ───────────────────────────────────────────────────── */
